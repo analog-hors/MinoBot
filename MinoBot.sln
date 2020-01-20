@@ -1,0 +1,37 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29613.14
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinoBot", "MinoBot\MinoBot.csproj", "{E0776042-DE8C-4A22-9842-DD81CD21B19F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MinoTetris", "MinoTetris\MinoTetris.csproj", "{7F040B34-1556-43E0-99AB-9D3427FC345B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MinoBotGUI", "MinoBotGUI\MinoBotGUI.csproj", "{3BC08CD3-56D1-422B-9D6F-54B627E3DD0F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E0776042-DE8C-4A22-9842-DD81CD21B19F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0776042-DE8C-4A22-9842-DD81CD21B19F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0776042-DE8C-4A22-9842-DD81CD21B19F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0776042-DE8C-4A22-9842-DD81CD21B19F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F040B34-1556-43E0-99AB-9D3427FC345B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F040B34-1556-43E0-99AB-9D3427FC345B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F040B34-1556-43E0-99AB-9D3427FC345B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F040B34-1556-43E0-99AB-9D3427FC345B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3BC08CD3-56D1-422B-9D6F-54B627E3DD0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3BC08CD3-56D1-422B-9D6F-54B627E3DD0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3BC08CD3-56D1-422B-9D6F-54B627E3DD0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3BC08CD3-56D1-422B-9D6F-54B627E3DD0F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {857A1C54-6920-4EA6-879A-E7CCA0D3E79C}
+	EndGlobalSection
+EndGlobal
