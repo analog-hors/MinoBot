@@ -78,6 +78,22 @@ namespace MinoBot
     }
     public class MinoBotEvaluator {
         public static MinoBotEvaluator standard = new MinoBotEvaluator();
+        private static Pattern wellPattern = new Pattern(new Pattern.CellPattern[] {
+            new Pattern.CellPattern(-1, 0, true),
+            new Pattern.CellPattern(-1, 1, true),
+            new Pattern.CellPattern(1, 0, true),
+            new Pattern.CellPattern(1, 1, true),
+            new Pattern.CellPattern(0, 0, false),
+            new Pattern.CellPattern(0, 1, false)
+        });
+        private static Pattern spikePattern = new Pattern(new Pattern.CellPattern[] {
+            new Pattern.CellPattern(-1, 0, false),
+            new Pattern.CellPattern(-1, 1, false),
+            new Pattern.CellPattern(1, 0, false),
+            new Pattern.CellPattern(1, 1, false),
+            new Pattern.CellPattern(0, 0, true),
+            new Pattern.CellPattern(0, 1, true)
+        });
         public float Evaluate(State<TetrisState, TetriminoState> state, TetriminoState move) {
             TetrisState tState = state.GetSelf();
             int holes = 0;
@@ -88,27 +104,29 @@ namespace MinoBot
                     }
                 }
             }
+            //A well is defined as a dip down two or more tiles 
+            int wells = 0;
+            //A spike is defined as a dip up two or more tiles 
+            int spikes = 0;
             int[] heights = new int[10];
             for (int x = 0; x < 10; x++) {
                 for (int y = 0; y < 40; y++) {
                     if (tState.tetris.GetCell(x, y) != CellType.EMPTY) {
                         heights[x] = 39 - y;
                     }
+                    if (wellPattern.Test(tState.tetris, x, y)) {
+                        wells += 1;
+                    }
+                    if (spikePattern.Test(tState.tetris, x, y)) {
+                        spikes += 1;
+                    }
                 }
             }
-            //A well is defined as a dip down two or more tiles 
-            //A spike is defined as a dip up two or more tiles 
-            int wellsAndSpikes = 0;
             int maxHeight = 0;
             int minHeight = 0;
             int totalHeight = 0;
             for (int i = 0; i < heights.Length; i++) {
                 int height = heights[i];
-                int diffPrev = i == 0 ? 40 : heights[i - 1] - heights[i];
-                int diffNext = i + 1 == heights.Length ? 40 : heights[i] - heights[i + 1];
-                if (diffPrev <= 2 || diffNext <= -2) {
-                    wellsAndSpikes += 1;
-                }
                 if (height > maxHeight) {
                     maxHeight = height;
                 }
@@ -128,8 +146,35 @@ namespace MinoBot
             }
             //transientScore += (diff * diff * -1f);
             transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared;
-            //transientScore += wellsAndSpikes > 1 ? ((wellsAndSpikes + 1) * (wellsAndSpikes + 1) * -0.1f) : 0;// One well is fine.
+            transientScore += wells * wells * -1;
+            transientScore += spikes * spikes * -1;
             return tState.accumulatedScore * 1 + transientScore * 1;
+        }
+        private class Pattern
+        {
+            private CellPattern[] pattern;
+            public Pattern(CellPattern[] pattern) {
+                this.pattern = pattern;
+            }
+            public bool Test(Tetris tetris, int x, int y) {
+                foreach (CellPattern cell in pattern) {
+                    if (tetris.GetCell(x + cell.x, y + cell.y) != CellType.EMPTY == cell.filled) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            public struct CellPattern
+            {
+                public readonly sbyte x;
+                public readonly sbyte y;
+                public readonly bool filled;
+                public CellPattern(sbyte x, sbyte y, bool filled) {
+                    this.x = x;
+                    this.y = y;
+                    this.filled = filled;
+                }
+            }
         }
     }
     public class TetrisState : State<TetrisState, TetriminoState>
