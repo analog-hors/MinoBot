@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="SharpNeatLib" Version="2.4.1.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MinoTetris\MinoTetris.csproj" />
   </ItemGroup>
 

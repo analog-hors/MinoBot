@@ -54,9 +54,13 @@ namespace MinoTetris
         }
         public Tetrimino GetPiece(int index) {
             index += bagIndex;
-            return index < currentBag.Length
-                ? currentBag[index]
-                : futureBag[index - currentBag.Length];
+            if (index < currentBag.Length) {
+                return currentBag[index];
+            }
+            if (index - currentBag.Length < futureBag.Length) {
+                return futureBag[index - currentBag.Length];
+            }
+            return null;
         }
         private void Shuffle(Tetrimino[] bag) {
             int n = bag.Length;

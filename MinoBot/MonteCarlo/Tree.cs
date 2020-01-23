@@ -4,52 +4,61 @@ using System.Text;
 
 namespace MinoBot.MonteCarlo
 {
-    public class Tree<TState, TMove> where TState: State<TMove>
+    public class Tree<TState, TMove> where TState : State<TState, TMove>
     {
         public Node<TState, TMove> root;
         // Scores a node, in which the highest scoring node is selected until a leaf node is found. 
         public Func<Node<TState, TMove>, float> selector;
         // Scores a node, the result of which will be used to backpropagate up the tree. 
-        public Func<TState, float> evaluator;
+        public Func<State<TState, TMove>, TMove, float> evaluator;
         // Takes in a leaf node, expands it (add children), then returns a child node.
         public Func<Node<TState, TMove>, Node<TState, TMove>> expander;
-        public Tree(TState state) {
-            root = new Node<TState, TMove>(state);
+        public Tree(State<TState, TMove> state) {
+            Reset(state);
         }
         public void Think() {
-            Node<TState, TMove> node = root;
-            while (!node.IsLeaf()) {
-                node = NextNode(node);
+            Node<TState, TMove> SelectNode(Node<TState, TMove> parent) {
+                if (parent.IsLeaf()) return parent;
+                Node<TState, TMove> maxNode = null;
+                float maxScore = 0;
+                foreach (Node<TState, TMove> node in parent.children) {
+                    if (node.state.Finished()) continue;
+                    float score = selector(node);
+                    if (score > maxScore || maxNode == null) {
+                        maxScore = score;
+                        maxNode = node;
+                    }
+                }
+                return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
             }
+            Node<TState, TMove> node = SelectNode(root);
+            if (node == null) return;
             node = expander(node);
-            node.simulations += 1;
-            float score = evaluator(node.state);
+            float score = evaluator(node.state, node.move);
             while (true) {
                 node.score += score;
+                node.simulations += 1;
                 if (node.IsRoot()) break;
                 node = node.parent;
             }
         }
-        public List<TMove> GetMove() {
-            List<TMove> moves = new List<TMove>();
-            Node<TState, TMove> node = root;
-            while (!node.IsLeaf()) {
-                node = NextNode(node); // Skips root node: Root nodes don't have moves anyways.
-                moves.Add(node.move);
-            }
-            return moves;
+        public void Reset(State<TState, TMove> state) {
+            root = new Node<TState, TMove>(state);
         }
-        private Node<TState, TMove> NextNode(Node<TState, TMove> parent) {
+        public Node<TState, TMove> GetMove() {
             Node<TState, TMove> maxNode = null;
-            float maxScore = 0;
-            foreach (Node<TState, TMove> node in parent.children) {
-                float score = selector(node);
+            float maxScore = float.NegativeInfinity;
+            foreach (Node<TState, TMove> node in root.children) {
+                if (node.state.Finished()) continue;
+                float score = node.simulations == 1 ? float.NegativeInfinity : node.score / node.simulations;
                 if (score > maxScore || maxNode == null) {
                     maxScore = score;
                     maxNode = node;
                 }
             }
-            return maxNode;
+            root = maxNode;
+            root.parent = null;
+            return root;
         }
     }
 }

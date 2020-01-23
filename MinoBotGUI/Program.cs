@@ -7,6 +7,8 @@ using SFML.System;
 using SysCol = System.Drawing.Color;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading.Tasks;
+using System.Threading;
 
 namespace MinoBotGUI
 {
@@ -22,18 +24,21 @@ namespace MinoBotGUI
             window.KeyPressed += OnKeyPressed;
             window.SetActive();
             window.SetFramerateLimit(60);
+            //Thread.Sleep(5000);
 
-            TetrisRNG tetRNG = new TetrisRNG(0);
+            TetrisRNG tetRNG = new TetrisRNG(3);
+            //while (tetRNG.GetPiece(0) != Tetrimino.T) tetRNG.NextPiece();
             tetris = new Tetris(tetRNG);
             TetrisDrawer.SetScale(new Vector2f(window.Size.X / 20, window.Size.Y / 20));
             pathfinder = new Pathfinder();
-            moves = pathfinder.FindAllMoves(tetris);
+            TetrisBot bot = new TetrisBot(tetris, new Random(0));
+            moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
             Random rng = new Random(2);
             IEnumerator<Move> path = null;
-            TetriminoState move = new TetriminoState();
+            TetriminoState move = new TetriminoState(-1, -1, -1);
             while (window.IsOpen) {
                 window.DispatchEvents();
                 window.Clear();
@@ -42,20 +47,58 @@ namespace MinoBotGUI
                     if (path != null && path.MoveNext()) {
                         Pathfinder.DoMove(tetris, path.Current);
                     } else {
-                        tetris.HardDrop();
-                        moves = pathfinder.FindAllMoves(tetris);
+                        if (move.x != -1) {
+                            tetris.HardDrop();
+                            bot.Update(tetris);
+                        } else {
+                            bot.Reset(tetris);
+                        }
+
+                        /*
+                        moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         int target = rng.Next(moves.Count);
                         foreach (TetriminoState m in moves) {
+                            move = m;
                             if (--target == 0) {
-                                move = m;
-                                List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
-                                Console.Clear();
-                                foreach (Move mv in pathList) {
-                                    Console.WriteLine(Enum.GetName(mv.GetType(), mv));
-                                }
-                                path = pathList.GetEnumerator();
+                                
                             }
+                        }*/
+                        using (CancellationTokenSource ts = new CancellationTokenSource()) {
+                            CancellationToken ct = ts.Token;
+                            Task.Run(() => {
+                                int thinks = 0;
+                                while (!ct.IsCancellationRequested) {
+                                    bot.Think();
+                                    thinks += 1;
+                                }
+                                Console.WriteLine(thinks + " thinks.");
+                            });
+                            Stopwatch stopwatch = new Stopwatch();
+                            stopwatch.Start();
+                            while (stopwatch.ElapsedMilliseconds < 1000) {
+                                window.DispatchEvents();
+                                window.Display();
+                            }
+                            stopWatch.Stop();
+                            Console.WriteLine("Thought for " + stopwatch.ElapsedMilliseconds + "ms.");
+                            ts.Cancel();
                         }
+                        MinoBot.MonteCarlo.Node<TetrisState, TetriminoState> node = bot.GetMove(tetris);
+                        Console.WriteLine("Selected node has:");
+                        Console.WriteLine(" score: " + node.score);
+                        Console.WriteLine(" simulations: " + (node.simulations - 1));
+
+                        move = node.move;
+                        moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+                        List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
+                        /*
+                        Console.Clear();
+                        //Console.WriteLine(move.x + ", " + move.y + ", " + move.rot);
+                        foreach (Move mv in pathList) {
+                            Console.WriteLine(Enum.GetName(mv.GetType(), mv));
+                        }
+                        */
+                        path = pathList.GetEnumerator();
                     }
                     stopWatch.Restart();
                 }
@@ -64,10 +107,11 @@ namespace MinoBotGUI
         }
 
         private static void OnKeyPressed(object sender, KeyEventArgs e) {
+            /*
             switch (e.Code) {
                 case Keyboard.Key.Space:
                     tetris.HardDrop();
-                    moves = pathfinder.FindAllMoves(tetris);
+                    moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                     break;
                 case Keyboard.Key.Left:
                     tetris.MoveLeft();
@@ -86,9 +130,10 @@ namespace MinoBotGUI
                     break;
                 case Keyboard.Key.C:
                     tetris.Hold();
-                    moves = pathfinder.FindAllMoves(tetris);
+                    moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                     break;
             }
+            */
         }
         private static void OnClose(object sender, EventArgs e) {
             window.Close();
@@ -136,21 +181,23 @@ namespace MinoBotGUI
                     }
                 }
             }
-            Vector2f origScale = tetrisRect.Scale;
-            Vector2f fifthScale = new Vector2f(0.20f, 0.20f);
-            Vector2f twoFifthScale = fifthScale * 2;
-            tetrisRect.Scale = fifthScale;
-            foreach (TetriminoState m in moves) {
-                if (m.Equals(move)) {
-                    tetrisRect.Scale = twoFifthScale;
+            if (moves != null) {
+                Vector2f origScale = tetrisRect.Scale;
+                Vector2f fifthScale = new Vector2f(0.20f, 0.20f);
+                Vector2f twoFifthScale = fifthScale * 2;
+                tetrisRect.Scale = fifthScale;
+                foreach (TetriminoState m in moves) {
+                    if (m.Equals(move)) {
+                        tetrisRect.Scale = twoFifthScale;
+                    }
+                    DrawTetrimino(tetris.current, m.x + 5, m.y - 20, m.rot);
+                    if (m.Equals(move)) {
+                        tetrisRect.Scale = fifthScale;
+                    }
                 }
-                DrawTetrimino(tetris.current, m.x + 5, m.y - 20, m.rot);
-                if (m.Equals(move)) {
-                    tetrisRect.Scale = fifthScale;
-                }
+                tetrisRect.Scale = origScale;
             }
             //DrawTetrimino(tetris.current, move.x + 5, move.y - 20, move.rot);
-            tetrisRect.Scale = origScale;
             DrawTetrimino(tetris.current, tetris.pieceX + 5, tetris.pieceY - 20, tetris.pieceRotation);
             if (tetris.hold != null) {
                 DrawTetrimino(tetris.hold, 1, 1, 0);

@@ -7,6 +7,7 @@ namespace MinoTetris
     public interface TetrisRNGProvider
     {
         Tetrimino NextPiece();
+        Tetrimino GetPiece(int index);
         int NextGarbageHole();
     }
 }

@@ -4,15 +4,15 @@ using System.Text;
 
 namespace MinoBot.MonteCarlo
 {
-    public class Node<TState, TMove> where TState: State<TMove>
+    public class Node<TState, TMove> where TState: State<TState, TMove>
     {
-        public TState state;
+        public State<TState, TMove> state;
         public TMove move;
         public Node<TState, TMove> parent;
         public HashSet<Node<TState, TMove>> children;
         public float score;
-        public int simulations;
-        public Node(TState state) {
+        public int simulations = 1;
+        public Node(State<TState, TMove> state) {
             this.state = state;
             children = new HashSet<Node<TState, TMove>>();
         }
@@ -22,10 +22,17 @@ namespace MinoBot.MonteCarlo
         public bool IsRoot() {
             return parent == null;
         }
-
+        public void Reset() {
+            parent = null;
+            children.Clear();
+            score = 0;
+            simulations = 1;
+        }
     }
-    public interface State<TMove>
+    public interface State<TState, TMove> where TState: State<TState, TMove>
     {
-        State<TMove> DoMove(TMove move);
+        TState DoMove(TMove move);
+        TState GetSelf();
+        bool Finished();
     }
 }

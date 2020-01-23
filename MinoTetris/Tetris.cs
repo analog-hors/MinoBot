@@ -5,19 +5,32 @@ namespace MinoTetris
     public class Tetris
     {
         private CellType[,] board;
-        private TetrisRNGProvider rng;
+        public TetrisRNGProvider rng { get; private set; }
         public Tetrimino current { get; private set; }
         public Tetrimino hold { get; private set; }
         public int pieceX;// { get; private set; }
         public int pieceY;// { get; private set; }
         public int pieceRotation;// { get; private set; }
         public bool blockOut { get; private set; }
+        public int linesCleared { get; private set; }
         public int linesSent { get; private set; }
         public bool held { get; private set; }
         public Tetris(TetrisRNGProvider rng) {
             board = new CellType[10, 40];
             this.rng = rng;
             SetPiece(rng.NextPiece());
+        }
+        public Tetris(Tetris from, TetrisRNGProvider rng) {
+            board = (CellType[,]) from.board.Clone();
+            this.rng = rng;
+            current = from.current;
+            hold = from.hold;
+            pieceX = from.pieceX;
+            pieceY = from.pieceY;
+            pieceRotation = from.pieceRotation;
+            blockOut = from.blockOut;
+            linesSent = from.linesSent;
+            held = from.held;
         }
         public bool MoveLeft() {
             return TryMove(pieceRotation, pieceX - 1, pieceY);
@@ -41,7 +54,7 @@ namespace MinoTetris
                 SetCell(block.x + pieceX, block.y + pieceY, current.type);
             }
             CellType[,] newBoard = new CellType[10, 40];
-            int clearedLines = 0;
+            linesCleared = 0;
             for (int y = 39; y >= 0; y--) {
                 bool rowFilled = true;
                 for (int x = 0; x < 10; x++) {
@@ -51,9 +64,9 @@ namespace MinoTetris
                     }
                 }
                 if (rowFilled) {
-                    clearedLines += 1;
+                    linesCleared += 1;
                 } else {
-                    int newY = y + clearedLines;
+                    int newY = y + linesCleared;
                     for (int x = 0; x < 10; x++) {
                         newBoard[x, newY] = board[x, y];
                     }
@@ -91,8 +104,9 @@ namespace MinoTetris
         public void SetPiece(Tetrimino piece) {
             current = piece;
             pieceX = 4;
-            pieceY = 20;
+            pieceY = 19;
             pieceRotation = 0;
+            TryMove(pieceRotation, pieceX, 20);
         }
         private bool TryMove(int rot, int x, int y) {
             if (PieceFits(rot, x, y)) {

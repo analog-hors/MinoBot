@@ -9,7 +9,7 @@ namespace MinoBot
     public class Pathfinder
     {
         private MoveNode[,,] field = new MoveNode[10, 40, 4];
-        public HashSet<TetriminoState> FindAllMoves(Tetris tetris) {
+        public HashSet<TetriminoState> FindAllMoves(Tetris tetris, int shiftDelay, int rotateDelay, int softDropDelay) {
             HashSet<TetriminoState> moves = new HashSet<TetriminoState>();
             Array.Clear(field, 0, field.Length);
             int len = (int) Move.Count;
@@ -20,25 +20,41 @@ namespace MinoBot
                 tetris.pieceY = y;
                 tetris.pieceRotation = r;
                 DoMove(tetris, Move.SONIC_DROP);
-                moves.Add(new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation));
                 for (int i = 0; i < len; i++) {
                     Move move = (Move) i;
                     tetris.pieceX = x;
                     tetris.pieceY = y;
                     tetris.pieceRotation = r;
-                    if (DoMove(tetris, move)) {
+                    bool moveSuccess = DoMove(tetris, move);
+                    TetriminoState childPos = new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
+                    if (moveSuccess) {
                         MoveNode prev = field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation];
-                        if (prev == null || prev.rank > parent.rank + MoveNode.GetRank(move)) {
-                            MoveNode child = new MoveNode(move, parent);
-                            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
-                            children.Enqueue(new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation));
+                        int rank = parent.rank;
+                        int moveRank = MoveNode.GetRank(move);
+                        rank += 1;
+                        if (move != Move.SONIC_DROP && move != Move.SOFT_DROP) {
+                            //rank += moveRank;
+                        } else {
+                            //rank -= 1;
                         }
+                        if (prev == null || prev.rank > rank) {
+                            if (move == Move.SONIC_DROP || move == Move.SOFT_DROP) {
+                                //rank += 1;
+                                //rank += moveRank;
+                            }
+                            MoveNode child = new MoveNode(move, parent, rank);
+                            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
+                            children.Enqueue(childPos);
+                        }
+                    }
+                    if (move == Move.SONIC_DROP) {
+                        moves.Add(childPos);
                     }
                 }
                 tetris.SetPiece(tetris.current);
             }
             tetris.SetPiece(tetris.current);
-            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = new MoveNode(Move.Count, null);
+            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = new MoveNode(Move.Count, null, 0);
             ExpandNode(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
             while (children.Count != 0) {
                 TetriminoState child = children.Dequeue();
@@ -81,16 +97,22 @@ namespace MinoBot
             public int rank;
             public Move move;
             public MoveNode parent;
-            public MoveNode(Move move, MoveNode parent) {
+            public MoveNode(Move move, MoveNode parent, int rank) {
                 this.move = move;
                 this.parent = parent;
-                rank = parent == null ? 0 : parent.rank + GetRank(move);
+                this.rank = rank;
             }
             public List<Move> GetMoves() {
                 List<Move> moves = new List<Move>();
                 MoveNode node = this;
+                bool skipping = true;
                 while (node.parent != null) {
-                    moves.Add(node.move);
+                    if (node.move != Move.SONIC_DROP && node.move != Move.SOFT_DROP) {
+                        skipping = false;
+                    }
+                    if (!skipping) {
+                        moves.Add(node.move);
+                    }
                     node = node.parent;
                 }
                 moves.Reverse();
@@ -105,15 +127,16 @@ namespace MinoBot
                     //Ranked better than their DAS equivalents
                     case Move.LEFT:
                     case Move.RIGHT:
-                    case Move.SOFT_DROP:
                         return 2;
+                    case Move.SOFT_DROP:
+                        return 10;
                     //Slow
                     case Move.DAS_LEFT:
                     case Move.DAS_RIGHT:
                         return 5;
                     //Slowest
                     case Move.SONIC_DROP:
-                        return 10;
+                        return 5;
                     default:
                         return 0;
                 }
