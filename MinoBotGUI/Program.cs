@@ -83,6 +83,9 @@ namespace MinoBotGUI
                             window.DispatchEvents();
                             window.Display();
                         }
+                        if (thinkTask.Exception != null) {
+                            throw thinkTask.Exception;
+                        }
                         MinoBot.MonteCarlo.Node node = bot.GetMove();
                         totalThinkMS += stopwatch.ElapsedMilliseconds;
                         totalThinks += thinks;
