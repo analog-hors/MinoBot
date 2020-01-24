@@ -1,27 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace MinoBot.MonteCarlo
 {
-    public class Tree<TState, TMove> where TState : State<TState, TMove>
+    public class Tree
     {
-        public Node<TState, TMove> root;
+        public Node root;
         // Scores a node, in which the highest scoring node is selected until a leaf node is found. 
-        public Func<Node<TState, TMove>, float> selector;
+        public Func<Node, float> selector;
         // Scores a node, the result of which will be used to backpropagate up the tree. 
-        public Func<State<TState, TMove>, TMove, float> evaluator;
+        public Func<TetrisState, TetriminoState, float> evaluator;
         // Takes in a leaf node, expands it (add children), then returns a child node.
-        public Func<Node<TState, TMove>, Node<TState, TMove>> expander;
-        public Tree(State<TState, TMove> state) {
+        public Func<Node, Node> expander;
+        public Tree(TetrisState state) {
             Reset(state);
         }
         public void Think() {
-            Node<TState, TMove> SelectNode(Node<TState, TMove> parent) {
+            Node SelectNode(Node parent) {
                 if (parent.IsLeaf()) return parent;
-                Node<TState, TMove> maxNode = null;
+                Node maxNode = null;
                 float maxScore = 0;
-                foreach (Node<TState, TMove> node in parent.children) {
+                foreach (Node node in parent.children) {
                     if (node.state.Finished()) continue;
                     float score = selector(node);
                     if (score > maxScore || maxNode == null) {
@@ -31,7 +29,7 @@ namespace MinoBot.MonteCarlo
                 }
                 return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
             }
-            Node<TState, TMove> node = SelectNode(root);
+            Node node = SelectNode(root);
             if (node == null) return;
             node = expander(node);
             float score = evaluator(node.state, node.move);
@@ -42,13 +40,13 @@ namespace MinoBot.MonteCarlo
                 node = node.parent;
             }
         }
-        public void Reset(State<TState, TMove> state) {
-            root = new Node<TState, TMove>(state);
+        public void Reset(TetrisState state) {
+            root = new Node(state);
         }
-        public Node<TState, TMove> GetMove() {
-            Node<TState, TMove> maxNode = null;
-            int maxSims = 0;
-            foreach (Node<TState, TMove> node in root.children) {
+        public Node GetMove() {
+            Node maxNode = null;
+            int maxSims = -1;
+            foreach (Node node in root.children) {
                 if (node.state.Finished()) continue;
                 if (node.simulations > maxSims) {
                     maxSims = node.simulations;

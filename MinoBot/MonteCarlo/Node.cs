@@ -4,17 +4,17 @@ using System.Text;
 
 namespace MinoBot.MonteCarlo
 {
-    public class Node<TState, TMove> where TState: State<TState, TMove>
+    public class Node
     {
-        public State<TState, TMove> state;
-        public TMove move;
-        public Node<TState, TMove> parent;
-        public HashSet<Node<TState, TMove>> children;
+        public TetrisState state;
+        public TetriminoState move;
+        public Node parent;
+        public HashSet<Node> children;
         public float score;
-        public int simulations = 1;
-        public Node(State<TState, TMove> state) {
+        public int simulations = 0;
+        public Node(TetrisState state) {
             this.state = state;
-            children = new HashSet<Node<TState, TMove>>();
+            children = new HashSet<Node>();
         }
         public bool IsLeaf() {
             return children.Count == 0;
@@ -26,13 +26,7 @@ namespace MinoBot.MonteCarlo
             parent = null;
             children.Clear();
             score = 0;
-            simulations = 1;
+            simulations = 0;
         }
-    }
-    public interface State<TState, TMove> where TState: State<TState, TMove>
-    {
-        TState DoMove(TMove move);
-        TState GetSelf();
-        bool Finished();
     }
 }

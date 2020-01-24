@@ -32,7 +32,11 @@ namespace MinoBotGUI
             TetrisDrawer.SetScale(new Vector2f(window.Size.X / 20, window.Size.Y / 20));
             pathfinder = new Pathfinder();
             TetrisBot bot = new TetrisBot(tetris, new Random(0));
+            bot.holdAllowed = true;
             moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+            double totalNodeScore = 0;
+            int totalSimulations = 0;
+            int movesMade = 0;
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -65,13 +69,12 @@ namespace MinoBotGUI
                         }*/
                         using (CancellationTokenSource ts = new CancellationTokenSource()) {
                             CancellationToken ct = ts.Token;
+                            int thinks = 0;
                             Task.Run(() => {
-                                int thinks = 0;
                                 while (!ct.IsCancellationRequested) {
                                     bot.Think();
                                     thinks += 1;
                                 }
-                                Console.WriteLine(thinks + " thinks.");
                             });
                             Stopwatch stopwatch = new Stopwatch();
                             stopwatch.Start();
@@ -80,15 +83,21 @@ namespace MinoBotGUI
                                 window.Display();
                             }
                             stopWatch.Stop();
-                            Console.WriteLine("Thought for " + stopwatch.ElapsedMilliseconds + "ms.");
                             ts.Cancel();
+                            Console.Clear();
+                            Console.WriteLine("Thought for " + stopwatch.ElapsedMilliseconds + "ms.");
+                            Console.WriteLine(thinks + " thinks.");
                         }
-                        MinoBot.MonteCarlo.Node<TetrisState, TetriminoState> node = bot.GetMove(tetris);
+                        MinoBot.MonteCarlo.Node node = bot.GetMove(tetris);
+                        movesMade += 1;
                         Console.WriteLine("Selected node has:");
-                        Console.WriteLine(" score: " + node.score);
-                        Console.WriteLine(" simulations: " + (node.simulations - 1));
+                        Console.WriteLine($" score: {node.score} (avg: {(totalNodeScore += node.score) / movesMade})");
+                        Console.WriteLine($" simulations: {node.simulations} (avg: {(totalSimulations += node.simulations) / movesMade})");
 
                         move = node.move;
+                        if (node.state.usesHeld) {
+                            tetris.Hold();
+                        }
                         moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
                         /*

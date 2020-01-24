@@ -8,15 +8,16 @@ namespace MinoBot
 {
     public class TetrisBot
     {
-        private Tree<TetrisState, TetriminoState> tree;
+        private Tree tree;
         private Pathfinder pathfinder;
         private static float sqrt2 = (float)Math.Sqrt(2);
         private Random random;
         public Tetrimino[] queue;
+        public bool holdAllowed = true;
         public TetrisBot(Tetris tetris, Random random) {
             this.random = random;
             pathfinder = new Pathfinder();
-            tree = new Tree<TetrisState, TetriminoState>(NewTetrisState(tetris)) {
+            tree = new Tree(NewTetrisState(tetris)) {
                 expander = NodeExpander,
                 selector = UCTSelector,
                 evaluator = MinoBotEvaluator.standard.Evaluate
@@ -27,10 +28,10 @@ namespace MinoBot
         }
         public void Update(Tetris tetris) {
             UpdateQueue(tetris);
-            int diff = 0 - tree.root.state.GetSelf().tetRng.index;
-            void ResetAll(Node<TetrisState, TetriminoState> node) {
-                node.state.GetSelf().tetRng.index += diff;
-                foreach (Node<TetrisState, TetriminoState> child in node.children) {
+            int diff = 0 - tree.root.state.tetRng.index;
+            void ResetAll(Node node) {
+                node.state.tetRng.index += diff;
+                foreach (Node child in node.children) {
                     ResetAll(child);
                 }
             }
@@ -39,7 +40,7 @@ namespace MinoBot
         public void Think() {
             tree.Think();
         }
-        public Node<TetrisState, TetriminoState> GetMove(Tetris tetris) {
+        public Node GetMove(Tetris tetris) {
             return tree.GetMove();
         }
         private TetrisState NewTetrisState(Tetris tetris) {
@@ -53,22 +54,30 @@ namespace MinoBot
                 queue[i] = tetris.rng.GetPiece(i);
             }
         }
-        private static float UCTSelector<TState, TMove>(Node<TState, TMove> node) where TState : State<TState, TMove> {
-            return node.score / node.simulations + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
+        private static float UCTSelector(Node node) {
+            return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
         }
-        private Node<TetrisState, TetriminoState> NodeExpander(Node<TetrisState, TetriminoState> node) {
-            HashSet<TetriminoState> moves = pathfinder.FindAllMoves(node.state.GetSelf().tetris, 1, 1, 1);
-            foreach (TetriminoState move in moves) {
-                Node<TetrisState, TetriminoState> child = new Node<TetrisState, TetriminoState>(node.state.DoMove(move)) {
-                    move = move,
-                    parent = node
-                };
-                if (!child.state.GetSelf().tetris.blockOut) {
-                    node.children.Add(child);
+        private Node NodeExpander(Node node) {
+            void CreateChildren(Tetris tetris) {
+                HashSet<TetriminoState> moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+                foreach (TetriminoState move in moves) {
+                    Node child = new Node(node.state.DoMove(move, tetris.held)) {
+                        move = move,
+                        parent = node
+                    };
+                    if (!child.state.tetris.blockOut) {
+                        node.children.Add(child);
+                    }
                 }
             }
+            CreateChildren(node.state.tetris);
+            if (holdAllowed) {
+                Tetris held = new Tetris(node.state.tetris, new CustomTetrisRNG(node.state.tetRng));
+                held.Hold();
+                CreateChildren(held);
+            }
             int i = random.Next(1, node.children.Count);
-            foreach (Node<TetrisState, TetriminoState> child in node.children) {
+            foreach (Node child in node.children) {
                 if (--i == 0) {
                     return child;
                 }
@@ -94,8 +103,8 @@ namespace MinoBot
             new Pattern.CellPattern(0, 0, true),
             new Pattern.CellPattern(0, 1, true)
         });
-        public float Evaluate(State<TetrisState, TetriminoState> state, TetriminoState move) {
-            TetrisState tState = state.GetSelf();
+        public float Evaluate(TetrisState state, TetriminoState move) {
+            TetrisState tState = state;
             int holes = 0;
             int buriedHoles = 0;
             for (int x = 0; x < 10; x++) {
@@ -150,6 +159,9 @@ namespace MinoBot
             transientScore += buriedHoles * buriedHoles * -0.5f;
             //transientScore += maxHeight * -10;
             transientScore += totalHeight * totalHeight * -0.1f;
+            if (move.y <= 30) {
+                transientScore += -100;
+            }
             if (tState.tetris.blockOut) {
                 transientScore += -1000;
             }
@@ -190,11 +202,12 @@ namespace MinoBot
             }
         }
     }
-    public class TetrisState : State<TetrisState, TetriminoState>
+    public class TetrisState
     {
         public Tetris tetris;
         public CustomTetrisRNG tetRng;
         public float accumulatedScore;
+        public bool usesHeld;
         public TetrisState(Tetris tetris, CustomTetrisRNG tetRng) {
             this.tetris = tetris;
             this.tetRng = tetRng;
@@ -202,19 +215,20 @@ namespace MinoBot
         public bool Finished() {
             return tetris.blockOut || tetRng.index + 1 >= tetRng.bot.queue.Length;
         }
-        public TetrisState DoMove(TetriminoState move) {
+        public TetrisState DoMove(TetriminoState move, bool hold) {
             CustomTetrisRNG childRng = new CustomTetrisRNG(tetRng);
             Tetris child = new Tetris(tetris, childRng);
+            if (hold) {
+                child.Hold();
+            }
             child.pieceX = move.x;
             child.pieceY = move.y;
             child.pieceRotation = move.rot;
             child.HardDrop();
             return new TetrisState(child, childRng) {
-                accumulatedScore = accumulatedScore
-            };
-        }
-        public TetrisState GetSelf() {
-            return this;
+                accumulatedScore = accumulatedScore,
+                usesHeld = hold
+        };
         }
     }
     public class CustomTetrisRNG : TetrisRNGProvider

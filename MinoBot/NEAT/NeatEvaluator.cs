@@ -13,13 +13,12 @@ namespace MinoBot.NEAT
         public NeatEvaluator(IBlackBox brain) {
             this.brain = brain;
         }
-        public float Evaluate(State<TetrisState, TetriminoState> state, TetriminoState move) {
-            TetrisState tState = state.GetSelf();
+        public float Evaluate(TetrisState state, TetriminoState move) {
             brain.ResetState();
             for (int x = 0; x < 10; x++) {
                 for (int y = 0; y < 20; x++) {
                     brain.InputSignalArray[y * 10 + x] =
-                        tState.tetris.GetCell(x, y) == CellType.EMPTY
+                        state.tetris.GetCell(x, y) == CellType.EMPTY
                             ? 0
                             : 1;
                 }
