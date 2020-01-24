@@ -32,8 +32,10 @@ namespace MinoBotGUI
             TetrisDrawer.SetScale(new Vector2f(window.Size.X / 20, window.Size.Y / 20));
             pathfinder = new Pathfinder();
             TetrisBot bot = new TetrisBot(tetris, new Random(0));
-            bot.holdAllowed = true;
+            bot.holdAllowed = false;
             moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+            long totalThinkMS = 0;
+            long totalThinks = 0;
             double totalNodeScore = 0;
             int totalSimulations = 0;
             int movesMade = 0;
@@ -67,32 +69,33 @@ namespace MinoBotGUI
                                 
                             }
                         }*/
-                        using (CancellationTokenSource ts = new CancellationTokenSource()) {
-                            CancellationToken ct = ts.Token;
-                            int thinks = 0;
-                            Task.Run(() => {
-                                while (!ct.IsCancellationRequested) {
-                                    bot.Think();
-                                    thinks += 1;
-                                }
-                            });
-                            Stopwatch stopwatch = new Stopwatch();
+                        int thinks = 0;
+                        Stopwatch stopwatch = new Stopwatch();
+                        Task thinkTask = Task.Run(() => {
                             stopwatch.Start();
-                            while (stopwatch.ElapsedMilliseconds < 500) {
-                                window.DispatchEvents();
-                                window.Display();
+                            while (stopwatch.ElapsedMilliseconds < 100) {
+                                bot.Think();
+                                thinks += 1;
                             }
                             stopWatch.Stop();
-                            ts.Cancel();
-                            Console.Clear();
-                            Console.WriteLine("Thought for " + stopwatch.ElapsedMilliseconds + "ms.");
-                            Console.WriteLine(thinks + " thinks.");
+                        });
+                        while (!thinkTask.IsCompleted) {
+                            window.DispatchEvents();
+                            window.Display();
                         }
-                        MinoBot.MonteCarlo.Node node = bot.GetMove(tetris);
+                        MinoBot.MonteCarlo.Node node = bot.GetMove();
+                        totalThinkMS += stopwatch.ElapsedMilliseconds;
+                        totalThinks += thinks;
+                        totalNodeScore += node.score;
+                        totalSimulations += node.simulations;
                         movesMade += 1;
+                        Console.Clear();
+                        Console.WriteLine($"Thought for {stopwatch.ElapsedMilliseconds}ms (avg: {totalThinkMS / (double) movesMade})");
+                        Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
+                        Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");
                         Console.WriteLine("Selected node has:");
-                        Console.WriteLine($" score: {node.score} (avg: {(totalNodeScore += node.score) / movesMade})");
-                        Console.WriteLine($" simulations: {node.simulations} (avg: {(totalSimulations += node.simulations) / movesMade})");
+                        Console.WriteLine($"  score: {node.score} (avg: {totalNodeScore / movesMade})");
+                        Console.WriteLine($"  simulations: {node.simulations} (avg: {totalSimulations / (double) movesMade})");
 
                         move = node.move;
                         if (node.state.usesHeld) {

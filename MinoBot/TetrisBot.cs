@@ -40,7 +40,7 @@ namespace MinoBot
         public void Think() {
             tree.Think();
         }
-        public Node GetMove(Tetris tetris) {
+        public Node GetMove() {
             return tree.GetMove();
         }
         private TetrisState NewTetrisState(Tetris tetris) {
