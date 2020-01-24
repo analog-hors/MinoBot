@@ -75,7 +75,7 @@ namespace MinoBotGUI
                             });
                             Stopwatch stopwatch = new Stopwatch();
                             stopwatch.Start();
-                            while (stopwatch.ElapsedMilliseconds < 1000) {
+                            while (stopwatch.ElapsedMilliseconds < 500) {
                                 window.DispatchEvents();
                                 window.Display();
                             }

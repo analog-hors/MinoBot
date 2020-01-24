@@ -47,12 +47,11 @@ namespace MinoBot.MonteCarlo
         }
         public Node<TState, TMove> GetMove() {
             Node<TState, TMove> maxNode = null;
-            float maxScore = float.NegativeInfinity;
+            int maxSims = 0;
             foreach (Node<TState, TMove> node in root.children) {
                 if (node.state.Finished()) continue;
-                float score = node.simulations == 1 ? float.NegativeInfinity : node.score / node.simulations;
-                if (score > maxScore || maxNode == null) {
-                    maxScore = score;
+                if (node.simulations > maxSims) {
+                    maxSims = node.simulations;
                     maxNode = node;
                 }
             }

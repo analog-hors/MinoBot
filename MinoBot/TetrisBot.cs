@@ -97,10 +97,19 @@ namespace MinoBot
         public float Evaluate(State<TetrisState, TetriminoState> state, TetriminoState move) {
             TetrisState tState = state.GetSelf();
             int holes = 0;
+            int buriedHoles = 0;
             for (int x = 0; x < 10; x++) {
                 for (int y = 1; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY && tState.tetris.GetCell(x, y - 1) != CellType.EMPTY) {
-                        holes += 1;
+                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
+                        int newY = y;
+                        while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
+                            if (newY == y - 1) {
+                                holes += 1;
+                            } else {
+                                buriedHoles += 1;
+                            }
+                        }
+                        
                     }
                 }
             }
@@ -138,15 +147,19 @@ namespace MinoBot
             //tState.accumulatedScore += (maxHeight * -10f);
             float transientScore = 0;
             transientScore += holes * holes * -1;
+            transientScore += buriedHoles * buriedHoles * -0.5f;
             //transientScore += maxHeight * -10;
             transientScore += totalHeight * totalHeight * -0.1f;
+            if (tState.tetris.blockOut) {
+                transientScore += -1000;
+            }
             int diff = maxHeight - minHeight;
             if (diff < 3) {
                 diff = 0;
             }
-            //transientScore += (diff * diff * -1f);
-            transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared;
-            transientScore += wells * wells * -1;
+            //transientScore += diff * diff * -1f;
+            transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared * tState.tetris.linesCleared;
+            transientScore += wells > 1 ? (wells * wells * -1) : 0;
             transientScore += spikes * spikes * -1;
             return tState.accumulatedScore * 1 + transientScore * 1;
         }
