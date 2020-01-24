@@ -59,7 +59,9 @@ namespace MinoBot.MonteCarlo
                 }
             }
             root = maxNode;
-            root.parent = null;
+            if (root != null) {
+                root.parent = null;
+            }
             return root;
         }
     }
