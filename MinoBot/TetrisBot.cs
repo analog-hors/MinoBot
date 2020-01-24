@@ -76,13 +76,7 @@ namespace MinoBot
                 held.Hold();
                 CreateChildren(held);
             }
-            int i = random.Next(1, node.children.Count);
-            foreach (Node child in node.children) {
-                if (--i == 0) {
-                    return child;
-                }
-            }
-            return null;
+            return node.children.Count == 0 ? null : node.children[random.Next(node.children.Count)];
         }
     }
     public class MinoBotEvaluator {

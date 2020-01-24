@@ -9,12 +9,12 @@ namespace MinoBot.MonteCarlo
         public TetrisState state;
         public TetriminoState move;
         public Node parent;
-        public HashSet<Node> children;
+        public List<Node> children;
         public float score;
         public int simulations = 0;
         public Node(TetrisState state) {
             this.state = state;
-            children = new HashSet<Node>();
+            children = new List<Node>();
         }
         public bool IsLeaf() {
             return children.Count == 0;
