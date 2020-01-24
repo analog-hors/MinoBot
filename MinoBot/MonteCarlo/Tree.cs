@@ -31,7 +31,12 @@ namespace MinoBot.MonteCarlo
             }
             Node node = SelectNode(root);
             if (node == null) return;
-            node = expander(node);
+            Node child = expander(node);
+            if (child == null) {
+                node.state.Finished(true);
+                return;
+            }
+            node = child;
             float score = evaluator(node.state, node.move);
             while (true) {
                 node.score += score;

@@ -202,12 +202,16 @@ namespace MinoBot
         public CustomTetrisRNG tetRng;
         public float accumulatedScore;
         public bool usesHeld;
+        private bool setFinished;
         public TetrisState(Tetris tetris, CustomTetrisRNG tetRng) {
             this.tetris = tetris;
             this.tetRng = tetRng;
         }
         public bool Finished() {
-            return tetris.blockOut || tetRng.index + 1 >= tetRng.bot.queue.Length;
+            return setFinished || tetris.blockOut || tetRng.index + 1 >= tetRng.bot.queue.Length;
+        }
+        public void Finished(bool finished) {
+            setFinished = finished;
         }
         public TetrisState DoMove(TetriminoState move, bool hold) {
             CustomTetrisRNG childRng = new CustomTetrisRNG(tetRng);
