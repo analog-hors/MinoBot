@@ -46,14 +46,37 @@ namespace MinoBot.MonteCarlo
             }
         }
         public void Reset(TetrisState state) {
-            root = new Node(state);
+            void ReturnNode(Node node) {
+                foreach (Node child in node.children) {
+                    ReturnNode(child);
+                }
+                NodePool.standard.Return(node);
+            }
+            if (root == null) {
+                root = new Node(state);
+            } else {
+                foreach (Node child in root.children) {
+                    ReturnNode(child);
+                }
+                root.Reset();
+                root.state = state;
+            }
         }
         public Node GetMove() {
+            void ReturnNode(Node node) {
+                foreach (Node child in node.children) {
+                    ReturnNode(child);
+                }
+                NodePool.standard.Return(node);
+            }
             Node maxNode = null;
             int maxSims = -1;
             foreach (Node node in root.children) {
                 if (node.state.Finished()) continue;
                 if (node.simulations > maxSims) {
+                    if (maxNode != null) {
+                        ReturnNode(maxNode);
+                    }
                     maxSims = node.simulations;
                     maxNode = node;
                 }

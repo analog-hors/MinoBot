@@ -8,7 +8,7 @@ namespace MinoBot
 {
     public class TetrisBot
     {
-        private Tree tree;
+        public Tree tree;
         private Pathfinder pathfinder;
         private static float sqrt2 = (float)Math.Sqrt(2);
         private Random random;
@@ -61,11 +61,11 @@ namespace MinoBot
             void CreateChildren(Tetris tetris) {
                 HashSet<TetriminoState> moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
-                    Node child = new Node(node.state.DoMove(move, tetris.held)) {
-                        move = move,
-                        parent = node
-                    };
-                    if (!child.state.tetris.blockOut) {
+                    TetrisState childState = node.state.DoMove(move, tetris.held);
+                    if (!childState.tetris.blockOut) {
+                        Node child = NodePool.standard.Rent(childState);
+                        child.move = move;
+                        child.parent = node;
                         node.children.Add(child);
                     }
                 }
@@ -109,7 +109,8 @@ namespace MinoBot
                             if (newY == y - 1) {
                                 holes += 1;
                             } else {
-                                buriedHoles += 1;
+                                holes += 1;
+                                //buriedHoles += 1;
                             }
                         }
                         
@@ -150,11 +151,12 @@ namespace MinoBot
             //tState.accumulatedScore += (maxHeight * -10f);
             float transientScore = 0;
             transientScore += holes * holes * -1;
-            transientScore += buriedHoles * buriedHoles * -0.5f;
+            transientScore += buriedHoles * buriedHoles * -1f;
             //transientScore += maxHeight * -10;
-            transientScore += totalHeight * totalHeight * -0.1f;
+            //transientScore += totalHeight * totalHeight * -0.1f;
             if (move.y <= 30) {
-                transientScore += -100;
+                int moveHeight = 39 - move.y;
+                transientScore += moveHeight * moveHeight * -1;
             }
             if (tState.tetris.blockOut) {
                 transientScore += -1000;
@@ -164,7 +166,7 @@ namespace MinoBot
                 diff = 0;
             }
             //transientScore += diff * diff * -1f;
-            transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared * tState.tetris.linesCleared;
+            transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared;
             transientScore += wells > 1 ? (wells * wells * -1) : 0;
             transientScore += spikes * spikes * -1;
             return tState.accumulatedScore * 1 + transientScore * 1;
