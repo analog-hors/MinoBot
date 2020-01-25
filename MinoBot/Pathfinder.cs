@@ -29,20 +29,16 @@ namespace MinoBot
                     TetriminoState childPos = new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
                     if (moveSuccess) {
                         MoveNode prev = field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation];
-                        int rank = parent.rank;
-                        int moveRank = MoveNode.GetRank(move);
-                        rank += 1;
-                        if (move != Move.SONIC_DROP && move != Move.SOFT_DROP) {
-                            //rank += moveRank;
-                        } else {
-                            //rank -= 1;
+                        int distanceTravelled = parent.distanceTravelled;
+                        //int newDistance = Math.Abs(x - tetris.pieceX) + Math.Abs(y - tetris.pieceY);
+                        if (move != Move.SONIC_DROP) {
+                            //distanceTravelled += newDistance;
                         }
-                        if (prev == null || prev.rank > rank) {
-                            if (move == Move.SONIC_DROP || move == Move.SOFT_DROP) {
-                                //rank += 1;
-                                //rank += moveRank;
+                        if (prev == null || prev.distanceTravelled > distanceTravelled) {
+                            if (move == Move.SONIC_DROP) {
+                                //distanceTravelled += newDistance;
                             }
-                            MoveNode child = new MoveNode(move, parent, rank);
+                            MoveNode child = new MoveNode(move, parent, distanceTravelled);
                             field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
                             children.Enqueue(childPos);
                         }
@@ -94,13 +90,13 @@ namespace MinoBot
         }
         private class MoveNode
         {
-            public int rank;
+            public int distanceTravelled;
             public Move move;
             public MoveNode parent;
-            public MoveNode(Move move, MoveNode parent, int rank) {
+            public MoveNode(Move move, MoveNode parent, int distanceTravelled) {
                 this.move = move;
                 this.parent = parent;
-                this.rank = rank;
+                this.distanceTravelled = distanceTravelled;
             }
             public List<Move> GetMoves() {
                 List<Move> moves = new List<Move>();

@@ -59,16 +59,6 @@ namespace MinoBotGUI
                         } else {
                             bot.Reset(tetris);
                         }
-
-                        /*
-                        moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
-                        int target = rng.Next(moves.Count);
-                        foreach (TetriminoState m in moves) {
-                            move = m;
-                            if (--target == 0) {
-                                
-                            }
-                        }*/
                         int thinks = 0;
                         Stopwatch stopwatch = new Stopwatch();
                         Task thinkTask = Task.Run(() => {
@@ -87,13 +77,14 @@ namespace MinoBotGUI
                             throw thinkTask.Exception;
                         }
                         MinoBot.MonteCarlo.Node node = bot.GetMove();
-                        totalThinkMS += stopwatch.ElapsedMilliseconds;
+                        long elapsed = stopwatch.ElapsedMilliseconds;
+                        totalThinkMS += elapsed;
                         totalThinks += thinks;
                         totalNodeScore += node.score;
                         totalSimulations += node.simulations;
                         movesMade += 1;
                         Console.Clear();
-                        Console.WriteLine($"Thought for {stopwatch.ElapsedMilliseconds}ms (avg: {totalThinkMS / (double) movesMade})");
+                        Console.WriteLine($"Thought for {elapsed}ms (avg: {totalThinkMS / (double) movesMade})");
                         Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
                         Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");
                         Console.WriteLine("Selected node has:");
