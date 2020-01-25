@@ -127,10 +127,10 @@ namespace MinoBot
                     if (tState.tetris.GetCell(x, y) != CellType.EMPTY) {
                         heights[x] = 39 - y;
                     }
-                    if (wellPattern.Test(tState.tetris, x, y)) {
+                    if (wellPattern.Test(tState.tetris, x, y) == 0) {
                         wells += 1;
                     }
-                    if (spikePattern.Test(tState.tetris, x, y)) {
+                    if (spikePattern.Test(tState.tetris, x, y) == 0) {
                         spikes += 1;
                     }
                 }
@@ -177,13 +177,14 @@ namespace MinoBot
             public Pattern(CellPattern[] pattern) {
                 this.pattern = pattern;
             }
-            public bool Test(Tetris tetris, int x, int y) {
+            public int Test(Tetris tetris, int x, int y) {
+                int diff = 0;
                 foreach (CellPattern cell in pattern) {
                     if (tetris.GetCell(x + cell.x, y + cell.y) != CellType.EMPTY == cell.filled) {
-                        return false;
+                        diff += 1;
                     }
                 }
-                return true;
+                return diff;
             }
             public struct CellPattern
             {
