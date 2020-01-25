@@ -49,7 +49,7 @@ namespace MinoBotGUI
                 window.DispatchEvents();
                 window.Clear();
                 TetrisDrawer.DrawTetrisBoard(window, new Vector2f(0, 0), tetris, tetRNG, moves, move);
-                if (stopWatch.ElapsedMilliseconds > 250) {
+                if (stopWatch.ElapsedMilliseconds > 50) {
                     if (path != null && path.MoveNext()) {
                         Pathfinder.DoMove(tetris, path.Current);
                     } else {
@@ -63,7 +63,7 @@ namespace MinoBotGUI
                         Stopwatch stopwatch = new Stopwatch();
                         Task thinkTask = Task.Run(() => {
                             stopwatch.Start();
-                            while (stopwatch.ElapsedMilliseconds < 100) {
+                            while (stopwatch.ElapsedMilliseconds < 500) {
                                 bot.Think();
                                 thinks += 1;
                             }
@@ -84,6 +84,7 @@ namespace MinoBotGUI
                         totalSimulations += node.simulations;
                         movesMade += 1;
                         Console.Clear();
+                        Console.WriteLine($"Move {movesMade}.");
                         Console.WriteLine($"Thought for {elapsed}ms (avg: {totalThinkMS / (double) movesMade})");
                         Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
                         Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");

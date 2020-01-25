@@ -109,8 +109,7 @@ namespace MinoBot
                             if (newY == y - 1) {
                                 holes += 1;
                             } else {
-                                holes += 1;
-                                //buriedHoles += 1;
+                                buriedHoles += 1;
                             }
                         }
                         
@@ -148,28 +147,20 @@ namespace MinoBot
                 }
                 totalHeight += height;
             }
-            //tState.accumulatedScore += (maxHeight * -10f);
-            float transientScore = 0;
-            transientScore += holes * holes * -1;
-            transientScore += buriedHoles * buriedHoles * -1f;
-            //transientScore += maxHeight * -10;
-            //transientScore += totalHeight * totalHeight * -0.1f;
+            float score = 0;
+            int holePenalty = holes + buriedHoles;
+            score += holePenalty * holePenalty * -1f;
             if (move.y <= 30) {
                 int moveHeight = 39 - move.y;
-                transientScore += moveHeight * moveHeight * -1;
+                score += moveHeight * moveHeight * -1;
             }
             if (tState.tetris.blockOut) {
-                transientScore += -1000;
+                score += -5000;
             }
-            int diff = maxHeight - minHeight;
-            if (diff < 3) {
-                diff = 0;
-            }
-            //transientScore += diff * diff * -1f;
-            transientScore += tState.tetris.linesCleared * tState.tetris.linesCleared;
-            transientScore += wells > 1 ? (wells * wells * -1) : 0;
-            transientScore += spikes * spikes * -1;
-            return tState.accumulatedScore * 1 + transientScore * 1;
+            score += tState.tetris.linesCleared * tState.tetris.linesCleared;
+            score += wells > 1 ? (wells * wells * -1) : 0;
+            score += spikes * spikes * -1;
+            return score;
         }
         private class Pattern
         {
