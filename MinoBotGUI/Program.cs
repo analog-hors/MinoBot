@@ -46,25 +46,30 @@ namespace MinoBotGUI
             Random rng = new Random(2);
             IEnumerator<Move> path = null;
             TetriminoState move = new TetriminoState(-1, -1, -1);
+            TetriminoState invalid = new TetriminoState();
             while (window.IsOpen) {
                 window.DispatchEvents();
                 window.Clear();
                 TetrisDrawer.DrawTetrisBoard(window, new Vector2f(0, 0), tetris, tetRNG, moves, move);
                 if (stopWatch.ElapsedMilliseconds > 50) {
-                    if (path != null && path.MoveNext()) {
-                        Pathfinder.DoMove(tetris, path.Current);
+                    if (path != null) {
+                        if (path.MoveNext()) {
+                            Pathfinder.DoMove(tetris, path.Current);
+                        } else {
+                            tetris.HardDrop();
+                            path = null;
+                            moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+                            move = invalid;
+                        }
                     } else {
                         if (move.x != -1) {
-                            tetris.HardDrop();
                             bot.Update(tetris);
-                        } else {
-                            bot.Reset(tetris);
                         }
                         int thinks = 0;
                         Stopwatch stopwatch = new Stopwatch();
                         Task thinkTask = Task.Run(() => {
                             stopwatch.Start();
-                            while (stopwatch.ElapsedMilliseconds < 500) {
+                            while (stopwatch.ElapsedMilliseconds < 150) {
                                 bot.Think();
                                 thinks += 1;
                             }
@@ -99,7 +104,6 @@ namespace MinoBotGUI
                         if (node.state.usesHeld) {
                             tetris.Hold();
                         }
-                        moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
                         /*
                         Console.Clear();
