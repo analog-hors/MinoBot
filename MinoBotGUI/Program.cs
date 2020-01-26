@@ -39,6 +39,7 @@ namespace MinoBotGUI
             double totalNodeScore = 0;
             int totalSimulations = 0;
             int movesMade = 0;
+            int totalDepth = 0;
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -82,12 +83,14 @@ namespace MinoBotGUI
                         totalThinks += thinks;
                         totalNodeScore += node.score;
                         totalSimulations += node.simulations;
+                        totalDepth += bot.maxDepth;
                         movesMade += 1;
                         Console.Clear();
                         Console.WriteLine($"Move {movesMade}.");
                         Console.WriteLine($"Thought for {elapsed}ms (avg: {totalThinkMS / (double) movesMade})");
                         Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
                         Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");
+                        Console.WriteLine($"Depth: {bot.maxDepth} (avg: {totalDepth / (double) movesMade}).");
                         Console.WriteLine("Selected node has:");
                         Console.WriteLine($"  score: {node.score} (avg: {totalNodeScore / movesMade})");
                         Console.WriteLine($"  simulations: {node.simulations} (avg: {totalSimulations / (double) movesMade})");

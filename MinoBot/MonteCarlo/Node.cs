@@ -13,6 +13,7 @@ namespace MinoBot.MonteCarlo
         public List<Node> children;
         public float score;
         public int simulations;
+        public int depth;
         public Node(TetrisState state) {
             this.state = state;
             children = new List<Node>();

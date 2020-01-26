@@ -16,7 +16,6 @@ namespace MinoBot.MonteCarlo
         }
         public void Think() {
             Node SelectNode(Node parent) {
-                if (parent.IsLeaf()) return parent;
                 Node maxNode = null;
                 float maxScore = 0;
                 foreach (Node node in parent.children) {
@@ -27,22 +26,35 @@ namespace MinoBot.MonteCarlo
                         maxNode = node;
                     }
                 }
-                return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
+                if (maxNode == null) {
+                    parent.state.Finished(true);
+                    return parent.parent == null ? null : SelectNode(parent.parent);
+                }
+                return maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
             }
-            Node node = SelectNode(root);
+            Node node = root.IsLeaf() ? root : SelectNode(root);
             if (node == null) return;
-            Node child = expander(node);
-            if (child == null) {
+            if (expander(node) == null) {
                 node.state.Finished(true);
                 return;
             }
-            node = child;
-            float score = evaluator(node.state, node.move);
-            while (true) {
-                node.score += score;
-                node.simulations += 1;
-                if (node.IsRoot()) break;
-                node = node.parent;
+            //node = child;
+            foreach (Node child in node.children) {
+                float score = evaluator(child.state, child.move);
+                Node n = child;
+                while (true) {
+                    /*
+                    if (node.simulations == 0 || node.score < score) {
+                        node.score = score;
+                    } else {
+                        score = node.score;
+                    }
+                    */
+                    n.score += score;
+                    n.simulations += 1;
+                    if (n.IsRoot()) break;
+                    n = n.parent;
+                }
             }
         }
         public void Reset(TetrisState state) {

@@ -14,6 +14,7 @@ namespace MinoBot
         private Random random;
         public Tetrimino[] queue;
         public bool holdAllowed = true;
+        public int maxDepth = 0;
         public TetrisBot(Tetris tetris, Random random) {
             this.random = random;
             pathfinder = new Pathfinder();
@@ -25,17 +26,20 @@ namespace MinoBot
         }
         public void Reset(Tetris tetris) {
             tree.Reset(NewTetrisState(tetris));
+            maxDepth = 0;
         }
         public void Update(Tetris tetris) {
             UpdateQueue(tetris);
             int diff = 0 - tree.root.state.tetRng.index;
             void ResetAll(Node node) {
                 node.state.tetRng.index += diff;
+                node.depth -= 1;
                 foreach (Node child in node.children) {
                     ResetAll(child);
                 }
             }
             ResetAll(tree.root);
+            maxDepth = 0;
         }
         public void Think() {
             tree.Think();
@@ -58,6 +62,7 @@ namespace MinoBot
             return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
         }
         private Node NodeExpander(Node node) {
+            bool finished = true;
             void CreateChildren(Tetris tetris) {
                 HashSet<TetriminoState> moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
@@ -66,6 +71,13 @@ namespace MinoBot
                         Node child = NodePool.standard.Rent(childState);
                         child.move = move;
                         child.parent = node;
+                        child.depth = node.depth + 1;
+                        if (child.depth > maxDepth) {
+                            maxDepth = child.depth;
+                        }
+                        if (!childState.Finished()) {
+                            finished = false;
+                        }
                         node.children.Add(child);
                     }
                 }
@@ -76,7 +88,7 @@ namespace MinoBot
                 held.Hold();
                 CreateChildren(held);
             }
-            return node.children.Count == 0 ? null : node.children[random.Next(node.children.Count)];
+            return finished ? null : node.children[random.Next(node.children.Count)];
         }
     }
     public class MinoBotEvaluator {
@@ -101,20 +113,32 @@ namespace MinoBot
             TetrisState tState = state;
             int holes = 0;
             int buriedHoles = 0;
+            bool isPC = true;
+            int[] rowsWithHoles = new int[40];
             for (int x = 0; x < 10; x++) {
                 for (int y = 1; y < 40; y++) {
                     if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
                         int newY = y;
                         while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
+                            if (rowsWithHoles[newY] > 0) {
+                                buriedHoles += 1;
+                            }
                             if (newY == y - 1) {
+                                rowsWithHoles[y] += 1;
                                 holes += 1;
                             } else {
                                 buriedHoles += 1;
                             }
+
                         }
                         
+                    } else {
+                        isPC = false;
                     }
                 }
+            }
+            if (isPC) {
+                return 1000;
             }
             //A well is defined as a dip down two or more tiles 
             int wells = 0;
