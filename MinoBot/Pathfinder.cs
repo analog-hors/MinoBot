@@ -29,15 +29,20 @@ namespace MinoBot
                     TetriminoState childPos = new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
                     if (moveSuccess) {
                         MoveNode prev = field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation];
-                        int distanceTravelled = parent.distanceTravelled;
-                        //int newDistance = Math.Abs(x - tetris.pieceX) + Math.Abs(y - tetris.pieceY);
-                        if (move != Move.SONIC_DROP) {
-                            //distanceTravelled += newDistance;
-                        }
-                        if (prev == null || prev.distanceTravelled > distanceTravelled) {
-                            if (move == Move.SONIC_DROP) {
-                                //distanceTravelled += newDistance;
+                        bool isMoreImportant = prev == null;
+                        int distanceTravelled = Math.Abs(x - tetris.pieceX) + Math.Abs(y - tetris.pieceY);
+                        if (!isMoreImportant) {
+                            int prevDist = prev.totalDistanceTravelled;
+                            if (prev.move == Move.SONIC_DROP) {
+                                prevDist -= prev.distanceTravelled;
                             }
+                            int newDist = parent.totalDistanceTravelled;
+                            if (move != Move.SONIC_DROP) {
+                                newDist += distanceTravelled;
+                            }
+                            isMoreImportant = prevDist > newDist;
+                        }
+                        if (isMoreImportant) {
                             MoveNode child = new MoveNode(move, parent, distanceTravelled);
                             field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
                             children.Enqueue(childPos);
@@ -90,13 +95,15 @@ namespace MinoBot
         }
         private class MoveNode
         {
-            public int distanceTravelled;
+            public int totalDistanceTravelled; //Total distance it took to get here while allowing further moves
+            public int distanceTravelled; //Distance for just the immediate move
             public Move move;
             public MoveNode parent;
             public MoveNode(Move move, MoveNode parent, int distanceTravelled) {
                 this.move = move;
                 this.parent = parent;
                 this.distanceTravelled = distanceTravelled;
+                totalDistanceTravelled = parent == null ? 0 : (parent.totalDistanceTravelled + distanceTravelled);
             }
             public List<Move> GetMoves() {
                 List<Move> moves = new List<Move>();
@@ -113,29 +120,6 @@ namespace MinoBot
                 }
                 moves.Reverse();
                 return moves;
-            }
-            public static int GetRank(Move move) {
-                switch (move) {
-                    //Rotations rated higher because they can move more than one step at a time through wallkicking
-                    case Move.ROT_LEFT:
-                    case Move.ROT_RIGHT:
-                        return 1;
-                    //Ranked better than their DAS equivalents
-                    case Move.LEFT:
-                    case Move.RIGHT:
-                        return 2;
-                    case Move.SOFT_DROP:
-                        return 10;
-                    //Slow
-                    case Move.DAS_LEFT:
-                    case Move.DAS_RIGHT:
-                        return 5;
-                    //Slowest
-                    case Move.SONIC_DROP:
-                        return 5;
-                    default:
-                        return 0;
-                }
             }
         }
     }
