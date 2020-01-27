@@ -84,7 +84,7 @@ namespace MinoBot.MonteCarlo
             Node maxNode = null;
             int maxSims = -1;
             foreach (Node node in root.children) {
-                if (node.state.Finished()) continue;
+                if (node.state.tetris.blockOut) continue;
                 if (node.simulations > maxSims) {
                     if (maxNode != null) {
                         ReturnNode(maxNode);

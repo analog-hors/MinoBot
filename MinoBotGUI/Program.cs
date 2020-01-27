@@ -77,7 +77,6 @@ namespace MinoBotGUI
                         });
                         while (!thinkTask.IsCompleted) {
                             window.DispatchEvents();
-                            window.Display();
                         }
                         if (thinkTask.Exception != null) {
                             throw thinkTask.Exception;
