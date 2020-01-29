@@ -23,7 +23,7 @@ namespace MinoBotGUI
             window.Closed += OnClose;
             window.KeyPressed += OnKeyPressed;
             window.SetActive();
-            window.SetFramerateLimit(60);
+            //window.SetFramerateLimit(60);
             //Thread.Sleep(5000);
 
             TetrisRNG tetRNG = new TetrisRNG(3);
@@ -38,8 +38,9 @@ namespace MinoBotGUI
             long totalThinks = 0;
             double totalNodeScore = 0;
             int totalSimulations = 0;
-            int movesMade = 0;
             int totalDepth = 0;
+            int totalNodes = 0;
+            int movesMade = 0;
 
             Stopwatch stopWatch = new Stopwatch();
             stopWatch.Start();
@@ -51,7 +52,7 @@ namespace MinoBotGUI
                 window.DispatchEvents();
                 window.Clear();
                 TetrisDrawer.DrawTetrisBoard(window, new Vector2f(0, 0), tetris, tetRNG, moves, move);
-                if (stopWatch.ElapsedMilliseconds > 50) {
+                if (stopWatch.ElapsedMilliseconds > -1) {
                     if (path != null) {
                         if (path.MoveNext()) {
                             Pathfinder.DoMove(tetris, path.Current);
@@ -69,7 +70,7 @@ namespace MinoBotGUI
                         Stopwatch stopwatch = new Stopwatch();
                         Task thinkTask = Task.Run(() => {
                             stopwatch.Start();
-                            while (stopwatch.ElapsedMilliseconds < 150) {
+                            while (stopwatch.ElapsedMilliseconds < 100) {
                                 bot.Think();
                                 thinks += 1;
                             }
@@ -88,6 +89,16 @@ namespace MinoBotGUI
                         totalNodeScore += node.score;
                         totalSimulations += node.simulations;
                         totalDepth += bot.maxDepth;
+                        int nodes = 0;
+                        Queue<MinoBot.MonteCarlo.Node> nodeQueue = new Queue<MinoBot.MonteCarlo.Node>();
+                        nodeQueue.Enqueue(bot.tree.root);
+                        while (nodeQueue.TryDequeue(out MinoBot.MonteCarlo.Node n)) {
+                            foreach (MinoBot.MonteCarlo.Node child in n.children) {
+                                nodeQueue.Enqueue(child);
+                            }
+                            nodes += 1;
+                        }
+                        totalNodes += nodes;
                         movesMade += 1;
                         Console.Clear();
                         Console.WriteLine($"Move {movesMade}.");
@@ -95,6 +106,7 @@ namespace MinoBotGUI
                         Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
                         Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");
                         Console.WriteLine($"Depth: {bot.maxDepth} (avg: {totalDepth / (double) movesMade}).");
+                        Console.WriteLine($"Nodes: {nodes} (avg: {totalNodes / (double )movesMade})");
                         Console.WriteLine("Selected node has:");
                         Console.WriteLine($"  score: {node.score} (avg: {totalNodeScore / movesMade})");
                         Console.WriteLine($"  simulations: {node.simulations} (avg: {totalSimulations / (double) movesMade})");
@@ -103,6 +115,7 @@ namespace MinoBotGUI
                         if (node.state.usesHeld) {
                             tetris.Hold();
                         }
+                        pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
                         /*
                         Console.Clear();

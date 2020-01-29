@@ -7,14 +7,14 @@ namespace MinoTetris
         private CellType[,] board;
         public TetrisRNGProvider rng { get; private set; }
         public Tetrimino current { get; private set; }
-        public Tetrimino hold { get; private set; }
+        public Tetrimino hold;// { get; private set; }
         public int pieceX;// { get; private set; }
         public int pieceY;// { get; private set; }
         public int pieceRotation;// { get; private set; }
         public bool blockOut { get; private set; }
         public int linesCleared { get; private set; }
         public int linesSent { get; private set; }
-        public bool held { get; private set; }
+        public bool held;// { get; private set; }
         public Tetris(TetrisRNGProvider rng) {
             board = new CellType[10, 40];
             this.rng = rng;

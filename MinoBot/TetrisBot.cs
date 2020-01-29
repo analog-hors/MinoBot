@@ -63,10 +63,10 @@ namespace MinoBot
         }
         private Node NodeExpander(Node node) {
             bool finished = true;
-            void CreateChildren(Tetris tetris) {
-                HashSet<TetriminoState> moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
+            void CreateChildren() {
+                HashSet<TetriminoState> moves = pathfinder.FindAllMoves(node.state.tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
-                    TetrisState childState = node.state.DoMove(move, tetris.held);
+                    TetrisState childState = node.state.DoMove(move, node.state.tetris.held);
                     if (!childState.tetris.blockOut) {
                         Node child = NodePool.standard.Rent(childState);
                         child.move = move;
@@ -82,11 +82,17 @@ namespace MinoBot
                     }
                 }
             }
-            CreateChildren(node.state.tetris);
+            CreateChildren();
             if (holdAllowed) {
-                Tetris held = new Tetris(node.state.tetris, new CustomTetrisRNG(node.state.tetRng));
-                held.Hold();
-                CreateChildren(held);
+                bool reverse = node.state.tetris.hold == null;
+                node.state.tetris.Hold();
+                CreateChildren();
+                node.state.tetris.held = false;
+                node.state.tetris.Hold();
+                if (reverse) {
+                    node.state.tetRng.index -= 1;
+                    node.state.tetris.hold = null;
+                }
             }
             return finished ? null : node.children[random.Next(node.children.Count)];
         }
@@ -114,41 +120,30 @@ namespace MinoBot
             int holes = 0;
             int buriedHoles = 0;
             bool isPC = true;
-            int[] rowsWithHoles = new int[40];
-            for (int x = 0; x < 10; x++) {
-                for (int y = 1; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
-                        int newY = y;
-                        while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
-                            if (rowsWithHoles[newY] > 0) {
-                                buriedHoles += 1;
-                            }
-                            if (newY == y - 1) {
-                                rowsWithHoles[y] += 1;
-                                holes += 1;
-                            } else {
-                                buriedHoles += 1;
-                            }
-
-                        }
-                        
-                    } else {
-                        isPC = false;
-                    }
-                }
-            }
-            if (isPC) {
-                return 1000;
-            }
-            //A well is defined as a dip down two or more tiles 
             int wells = 0;
-            //A spike is defined as a dip up two or more tiles 
             int spikes = 0;
             int[] heights = new int[10];
+            int[] rowsWithHoles = new int[40];
             for (int x = 0; x < 10; x++) {
-                for (int y = 0; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) != CellType.EMPTY) {
+                for (int y = 20; y < 40; y++) {
+                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
+                        if (39 - y < heights[x]) {
+                            /*
+                            rowsWithHoles[y] += 1;
+                            holes += 1;
+                            int newY = y - 1;
+                            while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
+                                if (rowsWithHoles[newY] > 0) {
+                                    buriedHoles += 1;
+                                }
+                                buriedHoles += 1;
+                            }
+                            */
+                            holes += Math.Max(1, heights[x] - 39 + y / 2);
+                        }
+                    } else {
                         heights[x] = 39 - y;
+                        isPC = false;
                     }
                     if (wellPattern.Test(tState.tetris, x, y) == 0) {
                         wells += 1;
@@ -157,6 +152,9 @@ namespace MinoBot
                         spikes += 1;
                     }
                 }
+            }
+            if (isPC) {
+                return 1000;
             }
             int maxHeight = 0;
             int minHeight = 0;
@@ -174,13 +172,15 @@ namespace MinoBot
             float score = 0;
             int holePenalty = holes + buriedHoles;
             score += holePenalty * holePenalty * -1f;
-            if (move.y <= 30) {
+            if (move.y <= 35) {
                 int moveHeight = 39 - move.y;
                 score += moveHeight * moveHeight * -1;
             }
             if (tState.tetris.blockOut) {
+                //How did we get here?
                 score += -5000;
             }
+            score += maxHeight * -1;
             score += tState.tetris.linesCleared * tState.tetris.linesCleared;
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
