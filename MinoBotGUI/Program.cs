@@ -50,9 +50,7 @@ namespace MinoBotGUI
             TetriminoState invalid = new TetriminoState();
             while (window.IsOpen) {
                 window.DispatchEvents();
-                window.Clear();
-                TetrisDrawer.DrawTetrisBoard(window, new Vector2f(0, 0), tetris, tetRNG, moves, move);
-                if (stopWatch.ElapsedMilliseconds > -1) {
+                if (stopWatch.ElapsedMilliseconds > 50) {                    
                     if (path != null) {
                         if (path.MoveNext()) {
                             Pathfinder.DoMove(tetris, path.Current);
@@ -62,6 +60,9 @@ namespace MinoBotGUI
                             moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                             move = invalid;
                         }
+                        window.Clear();
+                        TetrisDrawer.DrawTetrisBoard(window, new Vector2f(0, 0), tetris, tetRNG, moves, move);
+                        window.Display();
                     } else {
                         if (move.x != -1) {
                             bot.Update(tetris);
@@ -90,6 +91,7 @@ namespace MinoBotGUI
                         totalSimulations += node.simulations;
                         totalDepth += bot.maxDepth;
                         int nodes = 0;
+                        /*
                         Queue<MinoBot.MonteCarlo.Node> nodeQueue = new Queue<MinoBot.MonteCarlo.Node>();
                         nodeQueue.Enqueue(bot.tree.root);
                         while (nodeQueue.TryDequeue(out MinoBot.MonteCarlo.Node n)) {
@@ -98,6 +100,7 @@ namespace MinoBotGUI
                             }
                             nodes += 1;
                         }
+                        */
                         totalNodes += nodes;
                         movesMade += 1;
                         Console.Clear();
@@ -128,7 +131,6 @@ namespace MinoBotGUI
                     }
                     stopWatch.Restart();
                 }
-                window.Display();
             }
         }
 
