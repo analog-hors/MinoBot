@@ -16,6 +16,7 @@ namespace MinoBot.MonteCarlo
         }
         public void Think() {
             Node SelectNode(Node parent) {
+                if (parent.IsLeaf()) return parent;
                 Node maxNode = null;
                 float maxScore = 0;
                 foreach (Node node in parent.children) {
@@ -26,30 +27,19 @@ namespace MinoBot.MonteCarlo
                         maxNode = node;
                     }
                 }
-                if (maxNode == null) {
-                    parent.state.Finished(true);
-                    return parent.parent == null ? null : SelectNode(parent.parent);
-                }
-                return maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
+                return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
             }
-            Node node = root.IsLeaf() ? root : SelectNode(root);
+            Node node = SelectNode(root);
             if (node == null) return;
-            if (expander(node) == null) {
+            Node child = expander(node);
+            if (child == null) {
                 node.state.Finished(true);
                 return;
             }
-            //node = child;
-            foreach (Node child in node.children) {
-                float score = evaluator(child.state, child.move);
-                Node n = child;
+            foreach (var c in node.children) {
+                var n = c;
+                float score = evaluator(n.state, n.move);
                 while (true) {
-                    /*
-                    if (node.simulations == 0 || node.score < score) {
-                        node.score = score;
-                    } else {
-                        score = node.score;
-                    }
-                    */
                     n.score += score;
                     n.simulations += 1;
                     if (n.IsRoot()) break;

@@ -62,7 +62,6 @@ namespace MinoBot
             return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
         }
         private Node NodeExpander(Node node) {
-            bool finished = true;
             void CreateChildren() {
                 HashSet<TetriminoState> moves = pathfinder.FindAllMoves(node.state.tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
@@ -71,13 +70,6 @@ namespace MinoBot
                         Node child = NodePool.standard.Rent(childState);
                         child.move = move;
                         child.parent = node;
-                        child.depth = node.depth + 1;
-                        if (child.depth > maxDepth) {
-                            maxDepth = child.depth;
-                        }
-                        if (!childState.Finished()) {
-                            finished = false;
-                        }
                         node.children.Add(child);
                     }
                 }
@@ -94,7 +86,7 @@ namespace MinoBot
                     node.state.tetris.hold = null;
                 }
             }
-            return finished ? null : node.children[random.Next(node.children.Count)];
+            return node.children.Count == 0 ? null : node.children[random.Next(node.children.Count)];
         }
     }
     public class MinoBotEvaluator {
@@ -186,6 +178,72 @@ namespace MinoBot
             score += spikes * spikes * -1;
             return score;
         }
+        public float EvaluateOld(TetrisState state, TetriminoState move) {
+            TetrisState tState = state;
+            int holes = 0;
+            int buriedHoles = 0;
+            for (int x = 0; x < 10; x++) {
+                for (int y = 1; y < 40; y++) {
+                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
+                        int newY = y;
+                        while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
+                            if (newY == y - 1) {
+                                holes += 1;
+                            } else {
+                                buriedHoles += 1;
+                            }
+                        }
+                        
+                    }
+                }
+            }
+            //A well is defined as a dip down two or more tiles 
+            int wells = 0;
+            //A spike is defined as a dip up two or more tiles 
+            int spikes = 0;
+            int[] heights = new int[10];
+            for (int x = 0; x < 10; x++) {
+                for (int y = 0; y < 40; y++) {
+                    if (tState.tetris.GetCell(x, y) != CellType.EMPTY) {
+                        heights[x] = 39 - y;
+                    }
+                    if (wellPattern.Test(tState.tetris, x, y) == 0) {
+                        wells += 1;
+                    }
+                    if (spikePattern.Test(tState.tetris, x, y) == 0) {
+                        spikes += 1;
+                    }
+                }
+            }
+            int maxHeight = 0;
+            int minHeight = 0;
+            int totalHeight = 0;
+            for (int i = 0; i < heights.Length; i++) {
+                int height = heights[i];
+                if (height > maxHeight) {
+                    maxHeight = height;
+                }
+                if (height < minHeight) {
+                    minHeight = height;
+                }
+                totalHeight += height;
+            }
+            float score = 0;
+            int holePenalty = holes + buriedHoles;
+            score += holePenalty * holePenalty * -1f;
+            if (move.y <= 30) {
+                int moveHeight = 39 - move.y;
+                score += moveHeight * moveHeight * -1;
+            }
+            if (tState.tetris.blockOut) {
+                score += -5000;
+            }
+            score += tState.tetris.linesCleared * tState.tetris.linesCleared;
+            score += wells > 1 ? (wells * wells * -1) : 0;
+            score += spikes * spikes * -1;
+            return score;
+        }
+
         private class Pattern
         {
             private CellPattern[] pattern;
