@@ -72,16 +72,6 @@ namespace MinoBot
             switch (move) {
                 case Move.LEFT: return tetris.MoveLeft();
                 case Move.RIGHT: return tetris.MoveRight();
-                case Move.DAS_LEFT:
-                    while (tetris.MoveLeft()) {
-                        ret = true;
-                    }
-                    break;
-                case Move.DAS_RIGHT:
-                    while (tetris.MoveRight()) {
-                        ret = true;
-                    }
-                    break;
                 case Move.ROT_LEFT: return tetris.TurnLeft();
                 case Move.ROT_RIGHT: return tetris.TurnRight();
                 case Move.SONIC_DROP:
@@ -152,8 +142,6 @@ namespace MinoBot
         LEFT,  
         RIGHT,
         SOFT_DROP,
-        DAS_LEFT, 
-        DAS_RIGHT,
         SONIC_DROP,
         Count // Hack for getting length of enum
     }
