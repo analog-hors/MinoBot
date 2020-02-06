@@ -9,8 +9,8 @@ namespace MinoBot.MonteCarlo
         public Func<Node, float> selector;
         // Scores a node, the result of which will be used to backpropagate up the tree. 
         public Func<TetrisState, TetriminoState, float> evaluator;
-        // Takes in a leaf node, expands it (add children), then returns a child node.
-        public Func<Node, Node> expander;
+        // Takes in a leaf node and expands it (add children)
+        public Action<Node> expander;
         public Tree(TetrisState state) {
             Reset(state);
         }
@@ -31,13 +31,13 @@ namespace MinoBot.MonteCarlo
             }
             Node node = SelectNode(root);
             if (node == null) return;
-            Node child = expander(node);
-            if (child == null) {
+            expander(node);
+            if (node.IsLeaf()) {
                 node.state.Finished(true);
                 return;
             }
-            foreach (var c in node.children) {
-                var n = c;
+            foreach (Node c in node.children) {
+                Node n = c;
                 float score = evaluator(n.state, n.move);
                 while (true) {
                     n.score += score;

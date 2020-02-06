@@ -61,7 +61,7 @@ namespace MinoBot
         private static float UCTSelector(Node node) {
             return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
         }
-        private Node NodeExpander(Node node) {
+        private void NodeExpander(Node node) {
             void CreateChildren() {
                 HashSet<TetriminoState> moves = pathfinder.FindAllMoves(node.state.tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
@@ -86,7 +86,6 @@ namespace MinoBot
                     node.state.tetris.hold = null;
                 }
             }
-            return node.children.Count == 0 ? null : node.children[random.Next(node.children.Count)];
         }
     }
     public class MinoBotEvaluator {
