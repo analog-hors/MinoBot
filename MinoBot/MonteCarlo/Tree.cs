@@ -1,4 +1,5 @@
-﻿using System;
+﻿//#define POOLING
+using System;
 
 namespace MinoBot.MonteCarlo
 {
@@ -48,37 +49,45 @@ namespace MinoBot.MonteCarlo
             }
         }
         public void Reset(TetrisState state) {
+            #if POOLING
             void ReturnNode(Node node) {
                 foreach (Node child in node.children) {
                     ReturnNode(child);
                 }
                 NodePool.standard.Return(node);
             }
+            #endif
             if (root == null) {
                 root = new Node(state);
             } else {
+                #if POOLING
                 foreach (Node child in root.children) {
                     ReturnNode(child);
                 }
+                #endif
                 root.Reset();
                 root.state = state;
             }
         }
         public Node GetMove() {
+            #if POOLING
             void ReturnNode(Node node) {
                 foreach (Node child in node.children) {
                     ReturnNode(child);
                 }
                 NodePool.standard.Return(node);
             }
+            #endif
             Node maxNode = null;
             int maxSims = -1;
             foreach (Node node in root.children) {
                 if (node.state.tetris.blockOut) continue;
                 if (node.simulations > maxSims) {
+                    #if POOLING
                     if (maxNode != null) {
                         ReturnNode(maxNode);
                     }
+                    #endif
                     maxSims = node.simulations;
                     maxNode = node;
                 }
