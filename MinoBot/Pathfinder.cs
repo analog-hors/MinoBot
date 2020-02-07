@@ -1,5 +1,6 @@
 ﻿using MinoTetris;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -10,7 +11,8 @@ namespace MinoBot
     {
         private MoveNode[,,] field = new MoveNode[10, 40, 4];
         public HashSet<TetriminoState> FindAllMoves(Tetris tetris, int shiftDelay, int rotateDelay, int softDropDelay) {
-            HashSet<TetriminoState> moves = new HashSet<TetriminoState>();
+            TetriminoStateComparer.standard.tetrimino = tetris.current;
+            HashSet<TetriminoState> moves = new HashSet<TetriminoState>(TetriminoStateComparer.standard);
             Array.Clear(field, 0, field.Length);
             int len = (int) Move.Count;
             Queue<TetriminoState> children = new Queue<TetriminoState>();
@@ -112,6 +114,31 @@ namespace MinoBot
                 return moves;
             }
         }
+        private class TetriminoStateComparer : IEqualityComparer<TetriminoState>
+        {
+            public static TetriminoStateComparer standard = new TetriminoStateComparer(null);
+            public Tetrimino tetrimino;
+            public TetriminoStateComparer(Tetrimino tetrimino) {
+                this.tetrimino = tetrimino;
+            }
+            public bool Equals([AllowNull] TetriminoState x, [AllowNull] TetriminoState y) {
+                for (int i = 0; i < 4; i++) {
+                    Pair<int> xCell = GetCellPosition(x, i);
+                    Pair<int> yCell = GetCellPosition(y, i);
+                    if (xCell.x != yCell.x || xCell.y != yCell.y) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            private Pair<int> GetCellPosition(TetriminoState move, int i) {
+                Pair<sbyte> cell = tetrimino.states[move.rot, i];
+                return new Pair<int>(cell.x + move.x, cell.y + move.y);
+            }
+            public int GetHashCode([DisallowNull] TetriminoState move) {
+                return move.GetHashCode();
+            }
+        }
     }
     public struct TetriminoState : IEquatable<object>
     {
@@ -131,7 +158,7 @@ namespace MinoBot
             return other.x == x && other.y == y && other.rot == rot;
         }
         public override int GetHashCode() {
-            return HashCode.Combine(x, y, rot);
+            return x ^ (y >> 8) ^ (rot >> 16);
         }
     }
     
