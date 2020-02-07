@@ -107,7 +107,7 @@ namespace MinoBotGUI
                         Console.WriteLine($"Move {movesMade}.");
                         Console.WriteLine($"Thought for {elapsed}ms (avg: {totalThinkMS / (double) movesMade})");
                         Console.WriteLine($"{thinks} thinks (avg: {totalThinks / (double) movesMade})");
-                        Console.WriteLine($"{thinks / (stopwatch.ElapsedMilliseconds / 1000d)} thinks per second (avg: {totalThinks / (totalThinkMS / 1000d)})");
+                        Console.WriteLine($"{stopwatch.ElapsedMilliseconds / (double) thinks } ms per think (avg: {totalThinkMS / (double) totalThinks})");
                         Console.WriteLine($"Depth: {bot.maxDepth} (avg: {totalDepth / (double) movesMade}).");
                         Console.WriteLine($"Nodes: {nodes} (avg: {totalNodes / (double )movesMade})");
                         Console.WriteLine("Selected node has:");
