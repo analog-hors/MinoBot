@@ -1,141 +1,183 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Text;
 
 namespace MinoTetris
 {
-    public class Tetris
+    public class Tetris : ITetrisGame
     {
-        private CellType[,] board;
-        public TetrisRNGProvider rng { get; private set; }
-        public Tetrimino current { get; private set; }
-        public Tetrimino hold;// { get; private set; }
-        public int pieceX;// { get; private set; }
-        public int pieceY;// { get; private set; }
-        public int pieceRotation;// { get; private set; }
+        private const string DLL_PATH = "rust_tetris.dll";
         public bool blockOut { get; private set; }
+        public Tetrimino current { get; private set; }
         public int linesCleared { get; private set; }
-        public int linesSent { get; private set; }
-        public bool held;// { get; private set; }
-        public Tetris(TetrisRNGProvider rng) {
-            board = new CellType[10, 40];
-            this.rng = rng;
-            SetPiece(rng.NextPiece());
+        public int linesSent => throw new NotImplementedException();
+        public TetrisRNGProvider rng { get; private set; }
+        public bool held { get; set; }
+        public Tetrimino hold { get; set; }
+        private int _pieceRotation;
+        public int pieceRotation {
+            get {
+                return _pieceRotation;
+            }
+            set {
+                _pieceRotation = value;
+                set_piece_state(boardPtr, pieceX, pieceY, pieceRotation);
+            }
         }
-        public Tetris(Tetris from, TetrisRNGProvider rng) {
-            board = (CellType[,]) from.board.Clone();
+        private int _pieceX;
+        public int pieceX {
+            get {
+                return _pieceX;
+            }
+            set {
+                _pieceX = value;
+                set_piece_state(boardPtr, pieceX, pieceY, pieceRotation);
+            }
+        }
+        private int _pieceY;
+        public int pieceY {
+            get {
+                return _pieceY;
+            }
+            set {
+                _pieceY = value;
+                set_piece_state(boardPtr, pieceX, pieceY, pieceRotation);
+            }
+        }
+
+        private IntPtr boardPtr;
+        [DllImport(DLL_PATH)]
+        private static extern void set_piece_state(IntPtr board_ptr, Int32 x, Int32 y, Int32 rot);
+
+        [DllImport(DLL_PATH)]
+        private static extern IntPtr create(byte t);
+        public Tetris(TetrisRNGProvider rng) {
             this.rng = rng;
+            current = rng.NextPiece();
+            boardPtr = create((byte) current.type);
+        }
+        [DllImport(DLL_PATH)]
+        private static extern IntPtr clone(IntPtr board_ptr);
+        public Tetris(Tetris from, TetrisRNGProvider rng) {
+            this.rng = rng;
+            boardPtr = clone(from.boardPtr);
             current = from.current;
             hold = from.hold;
             pieceX = from.pieceX;
             pieceY = from.pieceY;
             pieceRotation = from.pieceRotation;
             blockOut = from.blockOut;
-            linesSent = from.linesSent;
             held = from.held;
         }
-        public bool MoveLeft() {
-            return TryMove(pieceRotation, pieceX - 1, pieceY);
+
+        [DllImport(DLL_PATH)]
+        private static extern byte get_cell(IntPtr board_ptr, Int32 x, Int32 y);
+        public CellType GetCell(int x, int y) {
+            return (CellType) get_cell(boardPtr, x, y);
         }
-        public bool MoveRight() {
-            return TryMove(pieceRotation, pieceX + 1, pieceY);
+
+        [DllImport(DLL_PATH)]
+        private static extern void set_cell(IntPtr board_ptr, Int32 x, Int32 y, byte cell);
+        public void SetCell(int x, int y, CellType cell) {
+            set_cell(boardPtr, x, y, (byte) cell);
         }
-        public bool TurnLeft() {
-            return Rotate(pieceRotation > 0 ? pieceRotation - 1 : 3);
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct HardDropResult
+        {
+            public bool block_out;
+            public Int32 lines_cleared;
         }
-        public bool TurnRight() {
-            return Rotate(pieceRotation < 3 ? pieceRotation + 1 : 0);
-        }
-        public bool SoftDrop() {
-            return TryMove(pieceRotation, pieceX, pieceY + 1);
-        }
+        [DllImport(DLL_PATH)]
+        private static extern HardDropResult hard_drop(IntPtr board_ptr, byte next);
         public bool HardDrop() {
-            while (TryMove(pieceRotation, pieceX, pieceY + 1)) { }
-            for (int i = current.states.GetLength(1) - 1; i >= 0 ; i--) {
-                Pair<sbyte> block = current.states[pieceRotation, i];
-                SetCell(block.x + pieceX, block.y + pieceY, current.type);
-            }
-            CellType[,] newBoard = new CellType[10, 40];
-            linesCleared = 0;
-            for (int y = 39; y >= 0; y--) {
-                bool rowFilled = true;
-                for (int x = 0; x < 10; x++) {
-                    if (board[x, y] == CellType.EMPTY) {
-                        rowFilled = false;
-                        break;
-                    }
-                }
-                if (rowFilled) {
-                    linesCleared += 1;
-                } else {
-                    int newY = y + linesCleared;
-                    for (int x = 0; x < 10; x++) {
-                        newBoard[x, newY] = board[x, y];
-                    }
-                }
-            }
-            board = newBoard;
-            SetPiece(rng.NextPiece());
-            if (!PieceFits(pieceRotation, pieceX, pieceY)) {
-                blockOut = true;
-            }
+            current = rng.NextPiece();
+            HardDropResult result = hard_drop(boardPtr, (byte) current.type);
+            blockOut = result.block_out;
+            linesCleared = result.lines_cleared;
             held = false;
             return !blockOut;
         }
+
+        [DllImport(DLL_PATH)]
+        private static extern bool hold_piece(IntPtr board_ptr, byte next);
         public bool Hold() {
+            held = hold_piece(boardPtr, (byte) rng.GetPiece(0).type);
             if (held) {
-                return false;
-            }
-            held = true;
-            Tetrimino temp = current;
-            SetPiece(hold == null ? rng.NextPiece() : hold);
-            hold = temp;
-            return true;
-        }
-        private bool Rotate(int rot) {
-            int len = current.offsetTable.GetLength(1);
-            for (int i = 0; i < len; i++) {
-                Pair<sbyte> fromOffset = current.offsetTable[pieceRotation, i];
-                Pair<sbyte> toOffset = current.offsetTable[rot, i];
-                if (TryMove(rot, pieceX + fromOffset.x - toOffset.x, pieceY - (fromOffset.y - toOffset.y))) {
-                    return true;
+                if (hold == null) {
+                    hold = current;
+                    current = rng.NextPiece();
+                } else {
+                    Tetrimino t = hold;
+                    hold = current;
+                    current = t;
                 }
             }
-            return false;
+            return held;
         }
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState move_left(IntPtr board_ptr);
+        public bool MoveLeft() {
+            return SetPieceState(move_left(boardPtr));
+        }
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState move_right(IntPtr board_ptr);
+        public bool MoveRight() {
+            return SetPieceState(move_right(boardPtr));
+        }
+
+        [DllImport(DLL_PATH)]
+        private static extern bool piece_fits(IntPtr board_ptr, Int32 rot, Int32 x, Int32 y);
+        public bool PieceFits(int rot, int x, int y) {
+            return piece_fits(boardPtr, rot, x, y);
+        }
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState set_piece(IntPtr board_ptr, byte piece);
         public void SetPiece(Tetrimino piece) {
             current = piece;
-            pieceX = 4;
-            pieceY = 19;
-            pieceRotation = 0;
-            TryMove(pieceRotation, pieceX, 20);
+            SetPieceState(set_piece(boardPtr, (byte) piece.type));
         }
-        private bool TryMove(int rot, int x, int y) {
-            if (PieceFits(rot, x, y)) {
-                pieceX = x;
-                pieceY = y;
-                pieceRotation = rot;
-                return true;
-            }
-            return false;
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState soft_drop(IntPtr board_ptr);
+        public bool SoftDrop() {
+            return SetPieceState(soft_drop(boardPtr));
         }
-        public bool PieceFits(int rot, int x, int y) {
-            for (int i = current.states.GetLength(1) - 1; i >= 0 ; i--) {
-                Pair<sbyte> block = current.states[rot, i];
-                if (GetCell(block.x + x, block.y + y) != CellType.EMPTY) {
-                    return false;
-                }
-            }
-            return true;
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState turn_left(IntPtr board_ptr);
+        public bool TurnLeft() {
+            return SetPieceState(turn_left(boardPtr));
         }
-        public CellType GetCell(int x, int y) {
-            return IsOutOfBounds(x, y) ? CellType.SOLID : board[x, y];
+
+        [DllImport(DLL_PATH)]
+        private static extern PieceState turn_right(IntPtr board_ptr);
+        public bool TurnRight() {
+            return SetPieceState(turn_right(boardPtr));
         }
-        public void SetCell(int x, int y, CellType cell) {
-            if (!IsOutOfBounds(x, y)) {
-                board[x, y] = cell;
-            }
+
+        [DllImport(DLL_PATH)]
+        private static extern void destroy(IntPtr board_ptr);
+        ~Tetris() {
+            destroy(boardPtr);
         }
-        public static bool IsOutOfBounds(int x, int y) {
-            return x < 0 || x >= 10 || y < 0 || y >= 40;
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PieceState
+        {
+            public Int32 x;
+            public Int32 y;
+            public Int32 r;
+        }
+        private bool SetPieceState(PieceState state) {
+            bool ret = pieceX != (pieceX = state.x);
+            ret = pieceY != (pieceY = state.y) || ret;
+            ret = pieceRotation != (pieceRotation = state.r) || ret;
+            return ret;
         }
     }
 }

@@ -264,7 +264,8 @@ namespace MinoTetris
             type = CellType.O
         };
     }
-    public enum CellType: byte
+    //IMPORTANT The Rust cell_type output gets directly converted to this enum, update if either changes
+    public enum CellType: byte 
     {
         EMPTY,
         GARBAGE,

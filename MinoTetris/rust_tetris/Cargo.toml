@@ -1,0 +1,16 @@
+[package]
+name = "rust_tetris"
+version = "0.1.0"
+authors = ["KSean222 <44050761+KSean222@users.noreply.github.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name="rust_tetris"
+crate-type = ["dylib"]
+
+[dependencies]
+num = "*"
+enum_primitive = "*"
+lazy_static = "*"
