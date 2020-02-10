@@ -31,7 +31,7 @@ namespace MinoBot
                     TetriminoState childPos = new TetriminoState(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
                     if (moveSuccess) {
                         MoveNode prev = field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation];
-                        bool isMoreImportant = prev == null;
+                        bool isMoreImportant = !prev.valid;
                         int distanceTravelled = Math.Abs(x - tetris.pieceX) + Math.Abs(y - tetris.pieceY);
                         if (!isMoreImportant) {
                             int prevDist = prev.totalDistanceTravelled;
@@ -45,7 +45,13 @@ namespace MinoBot
                             isMoreImportant = prevDist > newDist;
                         }
                         if (isMoreImportant) {
-                            MoveNode child = new MoveNode(move, parent, distanceTravelled);
+                            MoveNode child = new MoveNode {
+                                move = move,
+                                parent = new TetriminoState(x, y, r),
+                                distanceTravelled = distanceTravelled,
+                                totalDistanceTravelled = parent.totalDistanceTravelled + distanceTravelled,
+                                valid = true
+                            };//new MoveNode(move, parent, distanceTravelled);
                             field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
                             children.Enqueue(childPos);
                         }
@@ -57,7 +63,10 @@ namespace MinoBot
                 tetris.SetPiece(tetris.current);
             }
             tetris.SetPiece(tetris.current);
-            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = new MoveNode(Move.Count, null, 0);
+            field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = new MoveNode {
+                root = true,
+                valid = true
+            };
             ExpandNode(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
             while (children.Count != 0) {
                 TetriminoState child = children.Dequeue();
@@ -67,7 +76,22 @@ namespace MinoBot
         }
         public List<Move> GetPath(int x, int y, int rot) {
             MoveNode node = field[x, y, rot];
-            return node == null ? null : node.GetMoves();
+            if (!node.valid) {
+                return null;
+            }
+            List<Move> moves = new List<Move>();
+            bool skipping = true;
+            while (!node.root) {
+                if (node.move != Move.SONIC_DROP && node.move != Move.SOFT_DROP) {
+                    skipping = false;
+                }
+                if (!skipping) {
+                    moves.Add(node.move);
+                }
+                node = field[node.parent.x, node.parent.y, node.parent.rot];
+            }
+            moves.Reverse();
+            return moves;
         }
         public static bool DoMove(Tetris tetris, Move move) {
             bool ret = false;
@@ -85,34 +109,14 @@ namespace MinoBot
             }
             return ret;
         }
-        private class MoveNode
+        private struct MoveNode
         {
             public int totalDistanceTravelled; //Total distance it took to get here while allowing further moves
             public int distanceTravelled; //Distance for just the immediate move
             public Move move;
-            public MoveNode parent;
-            public MoveNode(Move move, MoveNode parent, int distanceTravelled) {
-                this.move = move;
-                this.parent = parent;
-                this.distanceTravelled = distanceTravelled;
-                totalDistanceTravelled = parent == null ? 0 : (parent.totalDistanceTravelled + distanceTravelled);
-            }
-            public List<Move> GetMoves() {
-                List<Move> moves = new List<Move>();
-                MoveNode node = this;
-                bool skipping = true;
-                while (node.parent != null) {
-                    if (node.move != Move.SONIC_DROP && node.move != Move.SOFT_DROP) {
-                        skipping = false;
-                    }
-                    if (!skipping) {
-                        moves.Add(node.move);
-                    }
-                    node = node.parent;
-                }
-                moves.Reverse();
-                return moves;
-            }
+            public TetriminoState parent;
+            public bool root;
+            public bool valid;
         }
         private class TetriminoStateComparer : IEqualityComparer<TetriminoState>
         {
