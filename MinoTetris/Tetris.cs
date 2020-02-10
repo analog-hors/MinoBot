@@ -118,7 +118,7 @@ namespace MinoTetris
             return false;
         }
         public bool PieceFits(int rot, int x, int y) {
-            for (int i = current.states.GetLength(1) - 1; i >= 0 ; i--) {
+            for (int i = 0; i < 4; i++) {
                 Pair<sbyte> block = current.states[rot, i];
                 if (GetCell(block.x + x, block.y + y) != CellType.EMPTY) {
                     return false;
