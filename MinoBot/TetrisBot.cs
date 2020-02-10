@@ -59,7 +59,7 @@ namespace MinoBot
             }
         }
         private static float UCTSelector(Node node) {
-            return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 2 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
+            return (node.simulations == 0 ? 0 : (node.score / node.simulations)) + (sqrt2 * 1 * (float)Math.Sqrt(Math.Log(node.parent.simulations) / node.simulations));
         }
         private void NodeExpander(Node node) {
             void CreateChildren() {
