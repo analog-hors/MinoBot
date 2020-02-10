@@ -117,6 +117,7 @@ namespace MinoBotGUI
                         move = node.move;
                         if (node.state.usesHeld) {
                             tetris.Hold();
+                            moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         }
                         pathfinder.FindAllMoves(tetris, 1, 1, 1);
                         List<Move> pathList = pathfinder.GetPath(move.x, move.y, move.rot);
