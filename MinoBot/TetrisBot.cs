@@ -30,8 +30,9 @@ namespace MinoBot
         }
         public void Update(Tetris tetris) {
             UpdateQueue(tetris);
+            int diff = 0 - tree.root.state.tetRng.index;
             void ResetAll(Node node) {
-                node.state.tetRng.index -= 1;
+                node.state.tetRng.index += diff;
                 node.depth -= 1;
                 foreach (Node child in node.children) {
                     ResetAll(child);
