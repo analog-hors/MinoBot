@@ -30,9 +30,8 @@ namespace MinoBot
         }
         public void Update(Tetris tetris) {
             UpdateQueue(tetris);
-            int diff = 0 - tree.root.state.tetRng.index;
             void ResetAll(Node node) {
-                node.state.tetRng.index += diff;
+                node.state.tetRng.index -= 1;
                 node.depth -= 1;
                 foreach (Node child in node.children) {
                     ResetAll(child);
@@ -67,7 +66,11 @@ namespace MinoBot
                 foreach (TetriminoState move in moves) {
                     TetrisState childState = node.state.DoMove(move, node.state.tetris.held);
                     if (!childState.tetris.blockOut) {
+                        #if POOLING
                         Node child = NodePool.standard.Rent(childState);
+                        #else
+                        Node child = new Node(childState);
+                        #endif
                         child.move = move;
                         child.parent = node;
                         node.children.Add(child);
