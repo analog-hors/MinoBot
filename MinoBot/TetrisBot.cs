@@ -110,7 +110,6 @@ namespace MinoBot
             new Pattern.CellPattern(0, 1, true)
         });
         public float Evaluate(TetrisState state, TetriminoState move) {
-            TetrisState tState = state;
             int holes = 0;
             int buriedHoles = 0;
             bool isPC = true;
@@ -120,7 +119,7 @@ namespace MinoBot
             int[] rowsWithHoles = new int[40];
             for (int x = 0; x < 10; x++) {
                 for (int y = 20; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
+                    if (state.tetris.GetCell(x, y) == CellType.EMPTY) {
                         if (39 - y < heights[x]) {
                             /*
                             rowsWithHoles[y] += 1;
@@ -139,10 +138,10 @@ namespace MinoBot
                         heights[x] = 39 - y;
                         isPC = false;
                     }
-                    if (wellPattern.Test(tState.tetris, x, y) == 0) {
+                    if (wellPattern.Test(state.tetris, x, y) == 0) {
                         wells += 1;
                     }
-                    if (spikePattern.Test(tState.tetris, x, y) == 0) {
+                    if (spikePattern.Test(state.tetris, x, y) == 0) {
                         spikes += 1;
                     }
                 }
@@ -170,12 +169,12 @@ namespace MinoBot
                 int moveHeight = 39 - move.y;
                 score += moveHeight * moveHeight * -1;
             }
-            if (tState.tetris.blockOut) {
+            if (state.tetris.blockOut) {
                 //How did we get here?
                 score += -5000;
             }
             score += maxHeight * -1;
-            score += tState.tetris.linesCleared * tState.tetris.linesCleared;
+            score += state.tetris.linesCleared * state.tetris.linesCleared;
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
             return score;
@@ -304,7 +303,7 @@ namespace MinoBot
             return new TetrisState(child, childRng) {
                 accumulatedScore = accumulatedScore,
                 usesHeld = hold
-        };
+            };
         }
     }
     public class CustomTetrisRNG : TetrisRNGProvider
