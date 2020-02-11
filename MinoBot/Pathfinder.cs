@@ -18,10 +18,6 @@ namespace MinoBot
             Queue<TetriminoState> children = new Queue<TetriminoState>();
             void ExpandNode(int x, int y, int r) {
                 MoveNode parent = field[x, y, r];
-                tetris.pieceX = x;
-                tetris.pieceY = y;
-                tetris.pieceRotation = r;
-                DoMove(tetris, Move.SONIC_DROP);
                 for (int i = 0; i < len; i++) {
                     Move move = (Move) i;
                     tetris.pieceX = x;
@@ -51,7 +47,7 @@ namespace MinoBot
                                 distanceTravelled = distanceTravelled,
                                 totalDistanceTravelled = parent.totalDistanceTravelled + distanceTravelled,
                                 valid = true
-                            };//new MoveNode(move, parent, distanceTravelled);
+                            };
                             field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
                             children.Enqueue(childPos);
                         }

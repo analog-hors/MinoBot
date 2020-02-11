@@ -15,21 +15,21 @@ namespace MinoBot.MonteCarlo
         public Tree(TetrisState state) {
             Reset(state);
         }
-        public void Think() {
-            Node SelectNode(Node parent) {
-                if (parent.IsLeaf()) return parent;
-                Node maxNode = null;
-                float maxScore = 0;
-                foreach (Node node in parent.children) {
-                    if (node.state.Finished()) continue;
-                    float score = selector(node);
-                    if (score > maxScore || maxNode == null) {
-                        maxScore = score;
-                        maxNode = node;
-                    }
+        private Node SelectNode(Node parent) {
+            if (parent.IsLeaf()) return parent;
+            Node maxNode = null;
+            float maxScore = 0;
+            foreach (Node node in parent.children) {
+                if (node.state.Finished()) continue;
+                float score = selector(node);
+                if (score > maxScore || maxNode == null) {
+                    maxScore = score;
+                    maxNode = node;
                 }
-                return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
             }
+            return maxNode == null || maxNode.IsLeaf() ? maxNode : SelectNode(maxNode);
+        }
+        public void Think() {
             Node node = SelectNode(root);
             if (node == null) return;
             expander(node);
@@ -48,15 +48,15 @@ namespace MinoBot.MonteCarlo
                 }
             }
         }
-        public void Reset(TetrisState state) {
-            #if POOLING
-            void ReturnNode(Node node) {
-                foreach (Node child in node.children) {
-                    ReturnNode(child);
-                }
-                NodePool.standard.Return(node);
+        #if POOLING
+        void ReturnNode(Node node) {
+            foreach (Node child in node.children) {
+                ReturnNode(child);
             }
-            #endif
+            NodePool.standard.Return(node);
+        }
+        #endif
+        public void Reset(TetrisState state) {
             if (root == null) {
                 root = new Node(state);
             } else {
@@ -70,14 +70,6 @@ namespace MinoBot.MonteCarlo
             }
         }
         public Node GetMove() {
-            #if POOLING
-            void ReturnNode(Node node) {
-                foreach (Node child in node.children) {
-                    ReturnNode(child);
-                }
-                NodePool.standard.Return(node);
-            }
-            #endif
             Node maxNode = null;
             int maxSims = -1;
             foreach (Node node in root.children) {
