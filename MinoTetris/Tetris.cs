@@ -1,10 +1,11 @@
 ﻿using System;
+using System.Collections;
 
 namespace MinoTetris
 {
     public class Tetris
     {
-        private CellType[,] board;
+        private ushort[] board;
         public TetrisRNGProvider rng { get; private set; }
         public Tetrimino current { get; private set; }
         public Tetrimino hold;// { get; private set; }
@@ -16,12 +17,12 @@ namespace MinoTetris
         public int linesSent { get; private set; }
         public bool held;// { get; private set; }
         public Tetris(TetrisRNGProvider rng) {
-            board = new CellType[10, 40];
+            board = new ushort[40];
             this.rng = rng;
             SetPiece(rng.NextPiece());
         }
         public Tetris(Tetris from, TetrisRNGProvider rng) {
-            board = (CellType[,]) from.board.Clone();
+            board = (ushort[]) from.board.Clone();
             this.rng = rng;
             current = from.current;
             hold = from.hold;
@@ -53,23 +54,14 @@ namespace MinoTetris
                 Pair<sbyte> block = current.states[pieceRotation, i];
                 SetCell(block.x + pieceX, block.y + pieceY, current.type);
             }
-            CellType[,] newBoard = new CellType[10, 40];
+            ushort[] newBoard = new ushort[40];
             linesCleared = 0;
             for (int y = 39; y >= 0; y--) {
-                bool rowFilled = true;
-                for (int x = 0; x < 10; x++) {
-                    if (board[x, y] == CellType.EMPTY) {
-                        rowFilled = false;
-                        break;
-                    }
-                }
+                bool rowFilled = board[y] == 0b0000001111111111;
                 if (rowFilled) {
                     linesCleared += 1;
                 } else {
-                    int newY = y + linesCleared;
-                    for (int x = 0; x < 10; x++) {
-                        newBoard[x, newY] = board[x, y];
-                    }
+                    newBoard[y + linesCleared] = board[y];
                 }
             }
             board = newBoard;
@@ -86,7 +78,7 @@ namespace MinoTetris
             }
             held = true;
             Tetrimino temp = current;
-            SetPiece(hold == null ? rng.NextPiece() : hold);
+            SetPiece(hold ?? rng.NextPiece());
             hold = temp;
             return true;
         }
@@ -127,11 +119,15 @@ namespace MinoTetris
             return true;
         }
         public CellType GetCell(int x, int y) {
-            return IsOutOfBounds(x, y) ? CellType.SOLID : board[x, y];
+            return IsOutOfBounds(x, y) || (board[y] & (1 << x)) != 0 ? CellType.GARBAGE : CellType.EMPTY;
         }
         public void SetCell(int x, int y, CellType cell) {
             if (!IsOutOfBounds(x, y)) {
-                board[x, y] = cell;
+                if (cell == CellType.EMPTY) {
+                    board[y] &= (ushort) ~(1 << x);
+                } else {
+                    board[y] |= (ushort) (1 << x);
+                }
             }
         }
         public static bool IsOutOfBounds(int x, int y) {
