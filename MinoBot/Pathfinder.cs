@@ -64,8 +64,7 @@ namespace MinoBot
                 valid = true
             };
             ExpandNode(tetris.pieceX, tetris.pieceY, tetris.pieceRotation);
-            while (children.Count != 0) {
-                TetriminoState child = children.Dequeue();
+            while (children.TryDequeue(out TetriminoState child)) {
                 ExpandNode(child.x, child.y, child.rot);
             }
             return moves;
