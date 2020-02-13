@@ -165,6 +165,11 @@ namespace MinoBot
             }
             float score = 0;
             int holePenalty = holes + buriedHoles;
+            if (holePenalty == 0) {
+                state.accumulatedScore = 0;
+            } else {
+                state.accumulatedScore += holePenalty * holePenalty * -1f;
+            }
             score += holePenalty * holePenalty * -1f;
             if (move.y <= 35) {
                 int moveHeight = 39 - move.y;
@@ -178,7 +183,7 @@ namespace MinoBot
             score += state.tetris.linesCleared * state.tetris.linesCleared;
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
-            return score;
+            return state.accumulatedScore * 1f + score * 1f;
         }
         public float EvaluateOld(TetrisState state, TetriminoState move) {
             TetrisState tState = state;
