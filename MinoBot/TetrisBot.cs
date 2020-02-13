@@ -183,7 +183,7 @@ namespace MinoBot
             score += state.tetris.linesCleared * state.tetris.linesCleared;
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
-            return state.accumulatedScore * 1f + score * 1f;
+            return state.accumulatedScore * 0f + score * 1f;
         }
         public float EvaluateOld(TetrisState state, TetriminoState move) {
             TetrisState tState = state;
