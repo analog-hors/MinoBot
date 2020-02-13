@@ -18,6 +18,10 @@ namespace MinoBot.MonteCarlo
             this.state = state;
             children = new List<Node>();
         }
+        /** Just for pooling purposes */
+        public Node() {
+            children = new List<Node>();
+        }
         public bool IsLeaf() {
             return children.Count == 0;
         }
@@ -34,8 +38,15 @@ namespace MinoBot.MonteCarlo
     }
     public class NodePool
     {
-        public static NodePool standard = new NodePool();
-        private ConcurrentBag<Node> pool = new ConcurrentBag<Node>();
+        public static NodePool standard = new NodePool(2000);
+        private readonly ConcurrentBag<Node> pool = new ConcurrentBag<Node>();
+        public NodePool(int size) {
+            #if POOLING
+            while (size-- > 0) {
+                pool.Add(new Node());
+            }
+            #endif
+        }
         public Node Rent(TetrisState state) {
             if (pool.TryTake(out Node node)) {
                 node.state = state;
