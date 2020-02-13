@@ -16,7 +16,7 @@ namespace MinoBot
             Array.Clear(field, 0, field.Length);
             int len = (int) Move.Count;
             Queue<TetriminoState> children = new Queue<TetriminoState>();
-            void ExpandNode(int x, int y, int r) {
+            void ExpandNode(int x, int y, byte r) {
                 MoveNode parent = field[x, y, r];
                 for (int i = 0; i < len; i++) {
                     Move move = (Move) i;
@@ -143,8 +143,8 @@ namespace MinoBot
     {
         public int x { get; }
         public int y { get; }
-        public int rot { get; }
-        public TetriminoState(int x, int y, int rot) {
+        public byte rot { get; }
+        public TetriminoState(int x, int y, byte rot) {
             this.x = x;
             this.y = y;
             this.rot = rot;

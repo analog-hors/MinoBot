@@ -46,7 +46,7 @@ namespace MinoBotGUI
             stopWatch.Start();
             Random rng = new Random(2);
             IEnumerator<Move> path = null;
-            TetriminoState move = new TetriminoState(-1, -1, -1);
+            TetriminoState move = new TetriminoState(-1, -1, 0);
             TetriminoState invalid = new TetriminoState();
             while (window.IsOpen) {
                 window.DispatchEvents();

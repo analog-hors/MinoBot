@@ -11,7 +11,7 @@ namespace MinoTetris
         public Tetrimino hold;// { get; private set; }
         public int pieceX;// { get; private set; }
         public int pieceY;// { get; private set; }
-        public int pieceRotation;// { get; private set; }
+        public byte pieceRotation;// { get; private set; }
         public bool blockOut { get; private set; }
         public int linesCleared { get; private set; }
         public int linesSent { get; private set; }
@@ -87,7 +87,7 @@ namespace MinoTetris
             for (int i = 0; i < len; i++) {
                 Pair<sbyte> fromOffset = current.offsetTable[pieceRotation, i];
                 Pair<sbyte> toOffset = current.offsetTable[rot, i];
-                if (TryMove(rot, pieceX + fromOffset.x - toOffset.x, pieceY - (fromOffset.y - toOffset.y))) {
+                if (TryMove((byte) rot, pieceX + fromOffset.x - toOffset.x, pieceY - (fromOffset.y - toOffset.y))) {
                     return true;
                 }
             }
@@ -100,7 +100,7 @@ namespace MinoTetris
             pieceRotation = 0;
             TryMove(pieceRotation, pieceX, 20);
         }
-        private bool TryMove(int rot, int x, int y) {
+        private bool TryMove(byte rot, int x, int y) {
             if (PieceFits(rot, x, y)) {
                 pieceX = x;
                 pieceY = y;
