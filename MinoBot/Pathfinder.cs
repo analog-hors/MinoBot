@@ -150,16 +150,11 @@ namespace MinoBot
             this.rot = rot;
         }
         public override bool Equals(object obj) {
-            /*
-            if (obj == null || GetType() != obj.GetType()) {
-                return false;
-            }
-            */
             TetriminoState other = (TetriminoState) obj;
             return other.x == x && other.y == y && other.rot == rot;
         }
         public override int GetHashCode() {
-            return x ^ (y >> 8) ^ (rot >> 16);
+            return x ^ (y << 8) ^ (rot << 16);
         }
     }
     
