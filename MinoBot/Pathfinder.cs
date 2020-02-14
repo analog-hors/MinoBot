@@ -135,7 +135,12 @@ namespace MinoBot
                 return new Pair<int>(cell.x + move.x, cell.y + move.y);
             }
             public int GetHashCode([DisallowNull] TetriminoState move) {
-                return move.GetHashCode();
+                uint hashcode = 0;
+                for (int i = 0; i < 4; i++) {
+                    Pair<int> cell = GetCellPosition(move, i);
+                    hashcode ^= (uint)(((byte)(cell.x ^ cell.y)) >> (i * 8));
+                }
+                return unchecked((int) hashcode);
             }
         }
     }
