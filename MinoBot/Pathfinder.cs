@@ -77,7 +77,7 @@ namespace MinoBot
             List<Move> moves = new List<Move>();
             bool skipping = true;
             while (!node.root) {
-                if (node.move != Move.SONIC_DROP && node.move != Move.SOFT_DROP) {
+                if (node.move != Move.SONIC_DROP) {
                     skipping = false;
                 }
                 if (!skipping) {
@@ -100,7 +100,6 @@ namespace MinoBot
                         ret = true;
                     }
                     break;
-                case Move.SOFT_DROP: return tetris.SoftDrop();
             }
             return ret;
         }
@@ -169,7 +168,6 @@ namespace MinoBot
         ROT_RIGHT,
         LEFT,  
         RIGHT,
-        SOFT_DROP,
         SONIC_DROP,
         Count // Hack for getting length of enum
     }
