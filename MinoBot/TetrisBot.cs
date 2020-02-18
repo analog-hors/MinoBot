@@ -112,6 +112,33 @@ namespace MinoBot
         });
         public float Evaluate(Node node, TetriminoState move) {
             TetrisState state = node.state;
+            TetrisState parentState = node.parent.state;
+            Tetrimino parentPiece = parentState.usesHeld
+                ? (parentState.tetris.hold ?? parentState.tetris.rng.GetPiece(1))
+                : parentState.tetris.current;
+            int totalEdgeTiles = 0;
+            int totalFilledEdgeTiles = 0;
+            void TestEdge(int x, int y) {
+                for (int i = 0; i < 4; i++) {
+                    Pair<sbyte> block = parentPiece.states[move.rot, i];
+                    if (x == block.x + move.x && y == block.y + move.y) {
+                        return;
+                    }
+                }
+                totalEdgeTiles += 1;
+                if (parentState.tetris.GetCell(x, y) != CellType.EMPTY) {
+                    totalFilledEdgeTiles += 1;
+                }
+            }
+            for (int i = 0; i < 4; i++) {
+                Pair<sbyte> block = parentPiece.states[move.rot, i];
+                int x = block.x + move.x;
+                int y = block.y + move.y;
+                TestEdge(x + 1, y);
+                TestEdge(x - 1, y);
+                TestEdge(x, y + 1);
+                TestEdge(x, y - 1);
+            }
             int holes = 0;
             int buriedHoles = 0;
             bool isPC = true;
@@ -184,6 +211,8 @@ namespace MinoBot
             score += state.tetris.linesCleared * state.tetris.linesCleared;
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
+            float pieceFit = totalFilledEdgeTiles / (float)totalEdgeTiles;
+            score += pieceFit * pieceFit * 100;
             return state.accumulatedScore * 0f + score * 1f;
         }
         public float EvaluateOld(TetrisState state, TetriminoState move) {
