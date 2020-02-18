@@ -110,7 +110,8 @@ namespace MinoBot
             new Pattern.CellPattern(0, 0, true),
             new Pattern.CellPattern(0, 1, true)
         });
-        public float Evaluate(TetrisState state, TetriminoState move) {
+        public float Evaluate(Node node, TetriminoState move) {
+            TetrisState state = node.state;
             int holes = 0;
             int buriedHoles = 0;
             bool isPC = true;
