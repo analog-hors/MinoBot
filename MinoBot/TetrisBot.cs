@@ -110,12 +110,15 @@ namespace MinoBot
             new Pattern.CellPattern(0, 0, true),
             new Pattern.CellPattern(0, 1, true)
         });
-        public float Evaluate(Node node, TetriminoState move) {
+        public (float, float) Evaluate(Node node, TetriminoState move) {
+            float accumulated = 0;
+            float transient = 0;
             TetrisState state = node.state;
             TetrisState parentState = node.parent.state;
             Tetrimino parentPiece = parentState.usesHeld
                 ? (parentState.tetris.hold ?? parentState.tetris.rng.GetPiece(1))
                 : parentState.tetris.current;
+
             int totalEdgeTiles = 0;
             int totalFilledEdgeTiles = 0;
             void TestEdge(int x, int y) {
@@ -139,29 +142,18 @@ namespace MinoBot
                 TestEdge(x, y + 1);
                 TestEdge(x, y - 1);
             }
+
             int holes = 0;
             int buriedHoles = 0;
             bool isPC = true;
             int wells = 0;
             int spikes = 0;
             int[] heights = new int[10];
-            int[] rowsWithHoles = new int[40];
             for (int x = 0; x < 10; x++) {
                 for (int y = 20; y < 40; y++) {
                     if (state.tetris.GetCell(x, y) == CellType.EMPTY) {
                         if (39 - y < heights[x]) {
-                            /*
-                            rowsWithHoles[y] += 1;
-                            holes += 1;
-                            int newY = y - 1;
-                            while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
-                                if (rowsWithHoles[newY] > 0) {
-                                    buriedHoles += 1;
-                                }
-                                buriedHoles += 1;
-                            }
-                            */
-                            holes += Math.Max(1, heights[x] - 39 + y / 2);
+                            holes += 1;//Math.Max(1, heights[x] - 39 + y / 2);
                         }
                     } else {
                         heights[x] = 39 - y;
@@ -175,9 +167,11 @@ namespace MinoBot
                     }
                 }
             }
+
             if (isPC) {
-                return 1000;
+                return (5000, 0);
             }
+
             int maxHeight = 0;
             int minHeight = 0;
             int totalHeight = 0;
@@ -191,24 +185,15 @@ namespace MinoBot
                 }
                 totalHeight += height;
             }
-            float score = 0;
+            
             int holePenalty = holes + buriedHoles;
-            if (holePenalty == 0) {
-                state.accumulatedScore = 0;
-            } else {
-                state.accumulatedScore += holePenalty * holePenalty * -1f;
-            }
-            score += holePenalty * holePenalty * -1f;
+            accumulated += holePenalty * holePenalty * -1f;
             if (move.y <= 35) {
                 int moveHeight = 39 - move.y;
-                score += moveHeight * moveHeight * -1;
+                accumulated += moveHeight * moveHeight * -1;
             }
-            if (state.tetris.blockOut) {
-                //How did we get here?
-                score += -5000;
-            }
-            score += maxHeight * -1;
-            score += state.tetris.tspin switch {
+            accumulated += maxHeight * -1;
+            accumulated += state.tetris.tspin switch {
                 TspinType.MINI => state.tetris.linesCleared switch {
                     1 => 1000,
                     2 => 2000,
@@ -228,11 +213,11 @@ namespace MinoBot
                     _ => 0
                 }
             };
-            score += wells > 1 ? (wells * wells * -1) : 0;
-            score += spikes * spikes * -1;
-            float pieceFit = totalFilledEdgeTiles / (float)totalEdgeTiles;
-            score += pieceFit * pieceFit * 100;
-            return state.accumulatedScore * 0f + score * 1f;
+            accumulated += wells > 1 ? (wells * wells * -1) : 0;
+            accumulated += spikes * spikes * -1;
+            float pieceFit = totalFilledEdgeTiles / (float) totalEdgeTiles;
+            accumulated += pieceFit * pieceFit * 100;
+            return (accumulated, transient);
         }
         public float EvaluateOld(TetrisState state, TetriminoState move) {
             TetrisState tState = state;
@@ -332,7 +317,6 @@ namespace MinoBot
     {
         public Tetris tetris;
         public CustomTetrisRNG tetRng;
-        public float accumulatedScore;
         public bool usesHeld;
         private bool setFinished;
         public TetrisState(Tetris tetris, CustomTetrisRNG tetRng) {
@@ -357,7 +341,6 @@ namespace MinoBot
             child.HardDrop();
             child.tspin = moveNode.tspin;
             return new TetrisState(child, childRng) {
-                accumulatedScore = accumulatedScore,
                 usesHeld = hold
             };
         }
