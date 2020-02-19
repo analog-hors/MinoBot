@@ -16,6 +16,8 @@ namespace MinoTetris
         public int linesCleared { get; private set; }
         public int linesSent { get; private set; }
         public bool held;// { get; private set; }
+        public TspinType tspin { get; private set; }
+        private TspinType elibigleForTspin;
         public Tetris(TetrisRNGProvider rng) {
             board = new ushort[40];
             this.rng = rng;
@@ -34,9 +36,11 @@ namespace MinoTetris
             held = from.held;
         }
         public bool MoveLeft() {
+            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX - 1, pieceY);
         }
         public bool MoveRight() {
+            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX + 1, pieceY);
         }
         public bool TurnLeft() {
@@ -46,9 +50,12 @@ namespace MinoTetris
             return Rotate(pieceRotation < 3 ? pieceRotation + 1 : 0);
         }
         public bool SoftDrop() {
+            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX, pieceY + 1);
         }
         public bool HardDrop() {
+            tspin = elibigleForTspin;
+            elibigleForTspin = TspinType.NONE;
             while (TryMove(pieceRotation, pieceX, pieceY + 1)) { }
             for (int i = current.states.GetLength(1) - 1; i >= 0 ; i--) {
                 Pair<sbyte> block = current.states[pieceRotation, i];
@@ -83,11 +90,46 @@ namespace MinoTetris
             return true;
         }
         private bool Rotate(int rot) {
+            elibigleForTspin = TspinType.NONE;
             int len = current.offsetTable.GetLength(1);
             for (int i = 0; i < len; i++) {
                 Pair<sbyte> fromOffset = current.offsetTable[pieceRotation, i];
                 Pair<sbyte> toOffset = current.offsetTable[rot, i];
-                if (TryMove((byte) rot, pieceX + fromOffset.x - toOffset.x, pieceY - (fromOffset.y - toOffset.y))) {
+                int xOffset = fromOffset.x - toOffset.x;
+                int yOffset = fromOffset.y - toOffset.y;
+                if (TryMove((byte) rot, pieceX + xOffset, pieceY - yOffset)) {
+                    if (current == Tetrimino.T) {
+                        int filledCorners = 0;
+                        bool topLeft = GetCell(pieceX - 1, pieceY - 1) != CellType.EMPTY;
+                        if (topLeft) {
+                            filledCorners += 1;
+                        }
+                        bool topRight = GetCell(pieceX + 1, pieceY - 1) != CellType.EMPTY;
+                        if (topRight) {
+                            filledCorners += 1;
+                        }
+                        bool bottomLeft = GetCell(pieceX - 1, pieceY + 1) != CellType.EMPTY;
+                        if (bottomLeft) {
+                            filledCorners += 1;
+                        }
+                        bool bottomRight = GetCell(pieceX + 1, pieceY + 1) != CellType.EMPTY;
+                        if (bottomRight) {
+                            filledCorners += 1;
+                        }
+                        if (filledCorners > 2) {
+                            bool isFull = pieceRotation switch {
+                                0 => topLeft && topRight,
+                                1 => topRight && bottomRight,
+                                2 => bottomLeft && bottomRight,
+                                _ => bottomLeft && topLeft
+                            };
+                            if (isFull || (yOffset == -2 && (xOffset == 1 || xOffset == -1))) {
+                                elibigleForTspin = TspinType.FULL;
+                            } else {
+                                elibigleForTspin = TspinType.MINI;
+                            }
+                        }
+                    }
                     return true;
                 }
             }
@@ -98,6 +140,7 @@ namespace MinoTetris
             pieceX = 4;
             pieceY = 19;
             pieceRotation = 0;
+            elibigleForTspin = TspinType.NONE;
             TryMove(pieceRotation, pieceX, 20);
         }
         private bool TryMove(byte rot, int x, int y) {
@@ -133,5 +176,10 @@ namespace MinoTetris
         public static bool IsOutOfBounds(int x, int y) {
             return x < 0 || x >= 10 || y < 0 || y >= 40;
         }
+    }
+    public enum TspinType {
+        NONE,
+        MINI,
+        FULL
     }
 }
