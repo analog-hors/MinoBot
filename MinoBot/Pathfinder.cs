@@ -9,7 +9,7 @@ namespace MinoBot
 {
     public class Pathfinder
     {
-        private MoveNode[,,] field = new MoveNode[10, 40, 4];
+        public MoveNode[,,] field = new MoveNode[10, 40, 4];
         public HashSet<TetriminoState> FindAllMoves(Tetris tetris, int shiftDelay, int rotateDelay, int softDropDelay) {
             TetriminoStateComparer.standard.tetrimino = tetris.current;
             HashSet<TetriminoState> moves = new HashSet<TetriminoState>(TetriminoStateComparer.standard);
@@ -46,7 +46,8 @@ namespace MinoBot
                                 parent = new TetriminoState(x, y, r),
                                 distanceTravelled = distanceTravelled,
                                 totalDistanceTravelled = parent.totalDistanceTravelled + distanceTravelled,
-                                valid = true
+                                valid = true,
+                                tspin = tetris.elibigleForTspin
                             };
                             field[tetris.pieceX, tetris.pieceY, tetris.pieceRotation] = child;
                             children.Enqueue(childPos);
@@ -103,7 +104,7 @@ namespace MinoBot
             }
             return ret;
         }
-        private struct MoveNode
+        public struct MoveNode
         {
             public int totalDistanceTravelled; //Total distance it took to get here while allowing further moves
             public int distanceTravelled; //Distance for just the immediate move
@@ -111,6 +112,7 @@ namespace MinoBot
             public TetriminoState parent;
             public bool root;
             public bool valid;
+            public TspinType tspin;
         }
         private class TetriminoStateComparer : IEqualityComparer<TetriminoState>
         {

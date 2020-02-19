@@ -16,8 +16,8 @@ namespace MinoTetris
         public int linesCleared { get; private set; }
         public int linesSent { get; private set; }
         public bool held;// { get; private set; }
-        public TspinType tspin { get; private set; }
-        private TspinType elibigleForTspin;
+        public TspinType tspin;
+        public TspinType elibigleForTspin;
         public Tetris(TetrisRNGProvider rng) {
             board = new ushort[40];
             this.rng = rng;
@@ -36,11 +36,9 @@ namespace MinoTetris
             held = from.held;
         }
         public bool MoveLeft() {
-            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX - 1, pieceY);
         }
         public bool MoveRight() {
-            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX + 1, pieceY);
         }
         public bool TurnLeft() {
@@ -50,7 +48,6 @@ namespace MinoTetris
             return Rotate(pieceRotation < 3 ? pieceRotation + 1 : 0);
         }
         public bool SoftDrop() {
-            elibigleForTspin = TspinType.NONE;
             return TryMove(pieceRotation, pieceX, pieceY + 1);
         }
         public bool HardDrop() {
@@ -148,6 +145,7 @@ namespace MinoTetris
                 pieceX = x;
                 pieceY = y;
                 pieceRotation = rot;
+                elibigleForTspin = TspinType.NONE;
                 return true;
             }
             return false;

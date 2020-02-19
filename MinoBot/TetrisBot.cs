@@ -65,7 +65,7 @@ namespace MinoBot
             void CreateChildren() {
                 HashSet<TetriminoState> moves = pathfinder.FindAllMoves(node.state.tetris, 1, 1, 1);
                 foreach (TetriminoState move in moves) {
-                    TetrisState childState = node.state.DoMove(move, node.state.tetris.held);
+                    TetrisState childState = node.state.DoMove(move, pathfinder.field[move.x, move.y, move.rot], node.state.tetris.held);
                     if (!childState.tetris.blockOut) {
                         #if POOLING
                         Node child = NodePool.standard.Rent(childState);
@@ -208,7 +208,26 @@ namespace MinoBot
                 score += -5000;
             }
             score += maxHeight * -1;
-            score += state.tetris.linesCleared * state.tetris.linesCleared;
+            score += state.tetris.tspin switch {
+                TspinType.MINI => state.tetris.linesCleared switch {
+                    1 => 1000,
+                    2 => 2000,
+                    _ => 500,
+                },
+                TspinType.FULL => state.tetris.linesCleared switch {
+                    1 => 2000,
+                    2 => 3000,
+                    3 => 5000,
+                    _ => 500
+                },
+                _ => state.tetris.linesCleared switch {
+                    1 => 1,
+                    2 => 4,
+                    3 => 9,
+                    4 => 16,
+                    _ => 0
+                }
+            };
             score += wells > 1 ? (wells * wells * -1) : 0;
             score += spikes * spikes * -1;
             float pieceFit = totalFilledEdgeTiles / (float)totalEdgeTiles;
@@ -326,7 +345,7 @@ namespace MinoBot
         public void Finished(bool finished) {
             setFinished = finished;
         }
-        public TetrisState DoMove(TetriminoState move, bool hold) {
+        public TetrisState DoMove(TetriminoState move, Pathfinder.MoveNode moveNode, bool hold) {
             CustomTetrisRNG childRng = new CustomTetrisRNG(tetRng);
             Tetris child = new Tetris(tetris, childRng);
             if (hold) {
@@ -336,6 +355,7 @@ namespace MinoBot
             child.pieceY = move.y;
             child.pieceRotation = move.rot;
             child.HardDrop();
+            child.tspin = moveNode.tspin;
             return new TetrisState(child, childRng) {
                 accumulatedScore = accumulatedScore,
                 usesHeld = hold
