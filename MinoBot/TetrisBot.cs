@@ -111,7 +111,8 @@ namespace MinoBot
             new Pattern.CellPattern(0, 0, true),
             new Pattern.CellPattern(0, 1, true)
         });
-        public (float, float) Evaluate(Node node, TetriminoState move) {
+        public (float, float) Evaluate(Node node) {
+            TetriminoState move = node.move;
             float accumulated = 0;
             float transient = 0;
             TetrisState state = node.state;
@@ -257,71 +258,6 @@ namespace MinoBot
             accumulated += pieceFit * pieceFit * 100;
             //transient += tslots * 100;
             return (accumulated, transient);
-        }
-        public float EvaluateOld(TetrisState state, TetriminoState move) {
-            TetrisState tState = state;
-            int holes = 0;
-            int buriedHoles = 0;
-            for (int x = 0; x < 10; x++) {
-                for (int y = 1; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) == CellType.EMPTY) {
-                        int newY = y;
-                        while (tState.tetris.GetCell(x, --newY) != CellType.EMPTY) {
-                            if (newY == y - 1) {
-                                holes += 1;
-                            } else {
-                                buriedHoles += 1;
-                            }
-                        }
-                        
-                    }
-                }
-            }
-            //A well is defined as a dip down two or more tiles 
-            int wells = 0;
-            //A spike is defined as a dip up two or more tiles 
-            int spikes = 0;
-            int[] heights = new int[10];
-            for (int x = 0; x < 10; x++) {
-                for (int y = 0; y < 40; y++) {
-                    if (tState.tetris.GetCell(x, y) != CellType.EMPTY) {
-                        heights[x] = 39 - y;
-                    }
-                    if (wellPattern.Test(tState.tetris, x, y) == 0) {
-                        wells += 1;
-                    }
-                    if (spikePattern.Test(tState.tetris, x, y) == 0) {
-                        spikes += 1;
-                    }
-                }
-            }
-            int maxHeight = 0;
-            int minHeight = 0;
-            int totalHeight = 0;
-            for (int i = 0; i < heights.Length; i++) {
-                int height = heights[i];
-                if (height > maxHeight) {
-                    maxHeight = height;
-                }
-                if (height < minHeight) {
-                    minHeight = height;
-                }
-                totalHeight += height;
-            }
-            float score = 0;
-            int holePenalty = holes + buriedHoles;
-            score += holePenalty * holePenalty * -1f;
-            if (move.y <= 30) {
-                int moveHeight = 39 - move.y;
-                score += moveHeight * moveHeight * -1;
-            }
-            if (tState.tetris.blockOut) {
-                score += -5000;
-            }
-            score += tState.tetris.linesCleared * tState.tetris.linesCleared;
-            score += wells > 1 ? (wells * wells * -1) : 0;
-            score += spikes * spikes * -1;
-            return score;
         }
 
         private class Pattern

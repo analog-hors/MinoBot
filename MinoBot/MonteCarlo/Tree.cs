@@ -9,7 +9,7 @@ namespace MinoBot.MonteCarlo
         // Scores a node, in which the highest scoring node is selected until a leaf node is found. 
         public Func<Node, float> selector;
         // Scores a node, the result of which will be used to backpropagate up the tree. 
-        public Func<Node, TetriminoState, (float, float)> evaluator;
+        public Func<Node, (float, float)> evaluator;
         // Takes in a leaf node and expands it (add children)
         public Action<Node> expander;
         public Tree(TetrisState state) {
@@ -39,7 +39,7 @@ namespace MinoBot.MonteCarlo
             }
             foreach (Node c in node.children) {
                 Node n = c;
-                (float accumulated, float transient) = evaluator(n, n.move);
+                (float accumulated, float transient) = evaluator(n);
                 n.score = transient;
                 while (true) {
                     n.score += accumulated;
@@ -89,7 +89,7 @@ namespace MinoBot.MonteCarlo
             if (root != null) {
                 Console.Clear();
                 MinoBotEvaluator.standard.logging = true;
-                MinoBotEvaluator.standard.Evaluate(root, root.move);
+                MinoBotEvaluator.standard.Evaluate(root);
                 MinoBotEvaluator.standard.logging = false;
                 root.parent = null;
             }
