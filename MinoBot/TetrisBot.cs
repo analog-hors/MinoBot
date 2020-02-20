@@ -94,6 +94,7 @@ namespace MinoBot
     }
     public class MinoBotEvaluator {
         public static MinoBotEvaluator standard = new MinoBotEvaluator();
+        public bool logging = false;
         private static Pattern wellPattern = new Pattern(new Pattern.CellPattern[] {
             new Pattern.CellPattern(-1, 0, true),
             new Pattern.CellPattern(-1, 1, true),
@@ -148,6 +149,7 @@ namespace MinoBot
             bool isPC = true;
             int wells = 0;
             int spikes = 0;
+            int tslots = 0;
             int[] heights = new int[10];
             for (int x = 0; x < 10; x++) {
                 for (int y = 20; y < 40; y++) {
@@ -164,6 +166,42 @@ namespace MinoBot
                     }
                     if (spikePattern.Test(state.tetris, x, y) == 0) {
                         spikes += 1;
+                    }
+                    if (state.tetris.GetCell(x, y) == CellType.EMPTY) {
+                        int tCorners = 0;
+                        if (state.tetris.GetCell(x - 1, y - 1) != CellType.EMPTY) {
+                            tCorners += 1;
+                        }
+                        if (state.tetris.GetCell(x + 1, y - 1) != CellType.EMPTY) {
+                            tCorners += 1;
+                        }
+                        if (state.tetris.GetCell(x - 1, y + 1) != CellType.EMPTY) {
+                            tCorners += 1;
+                        }
+                        if (state.tetris.GetCell(x + 1, y + 1) != CellType.EMPTY) {
+                            tCorners += 1;
+                        }
+                        if (tCorners > 2) {
+                            int tHoles = 0;
+                            if (state.tetris.GetCell(x - 1, y) == CellType.EMPTY) {
+                                tHoles += 1;
+                            }
+                            if (state.tetris.GetCell(x + 1, y) == CellType.EMPTY) {
+                                tHoles += 1;
+                            }
+                            if (state.tetris.GetCell(x, y - 1) == CellType.EMPTY) {
+                                //tHoles += 1;
+                            }
+                            if (state.tetris.GetCell(x, y + 1) == CellType.EMPTY) {
+                                tHoles += 1;
+                            }
+                            if (tHoles > 2) {
+                                if (logging) {
+                                    Console.WriteLine($"tslot at {x}, {y}");
+                                }
+                                tslots += 1;
+                            }
+                        }
                     }
                 }
             }
@@ -197,13 +235,13 @@ namespace MinoBot
                 TspinType.MINI => state.tetris.linesCleared switch {
                     1 => 1000,
                     2 => 2000,
-                    _ => 500,
+                    _ => 0,
                 },
                 TspinType.FULL => state.tetris.linesCleared switch {
                     1 => 2000,
                     2 => 3000,
                     3 => 5000,
-                    _ => 500
+                    _ => 0
                 },
                 _ => state.tetris.linesCleared switch {
                     1 => 1,
@@ -217,6 +255,7 @@ namespace MinoBot
             accumulated += spikes * spikes * -1;
             float pieceFit = totalFilledEdgeTiles / (float) totalEdgeTiles;
             accumulated += pieceFit * pieceFit * 100;
+            //transient += tslots * 100;
             return (accumulated, transient);
         }
         public float EvaluateOld(TetrisState state, TetriminoState move) {
