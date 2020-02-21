@@ -113,19 +113,30 @@ namespace MinoBot
         });
         public (float, float) Evaluate(Node node) {
             TetriminoState move = node.move;
-            float accumulated = 0;
-            float transient = 0;
             TetrisState state = node.state;
             TetrisState parentState = node.parent.state;
-            Tetrimino parentPiece = parentState.usesHeld
-                ? (parentState.tetris.hold ?? parentState.tetris.rng.GetPiece(1))
-                : parentState.tetris.current;
+            float accumulated = 0;
+            float transient = 0;
+
+            int availibleTs = 0;
+            for (int i = 0; true; i++) {
+                Tetrimino tetrimino = parentState.tetris.rng.GetPiece(i);
+                if (tetrimino == null) {
+                    break;
+                }
+                if (tetrimino == Tetrimino.T) {
+                    availibleTs += 1;
+                }
+            }
+            if (logging) {
+                Console.WriteLine($"{availibleTs} availible Ts.");
+            }
 
             int totalEdgeTiles = 0;
             int totalFilledEdgeTiles = 0;
             void TestEdge(int x, int y) {
                 for (int i = 0; i < 4; i++) {
-                    Pair<sbyte> block = parentPiece.states[move.rot, i];
+                    Pair<sbyte> block = state.tetrimino.states[move.rot, i];
                     if (x == block.x + move.x && y == block.y + move.y) {
                         return;
                     }
@@ -136,7 +147,7 @@ namespace MinoBot
                 }
             }
             for (int i = 0; i < 4; i++) {
-                Pair<sbyte> block = parentPiece.states[move.rot, i];
+                Pair<sbyte> block = state.tetrimino.states[move.rot, i];
                 int x = block.x + move.x;
                 int y = block.y + move.y;
                 TestEdge(x + 1, y);
@@ -190,7 +201,8 @@ namespace MinoBot
                             if (state.tetris.GetCell(x + 1, y) == CellType.EMPTY) {
                                 tHoles += 1;
                             }
-                            if (state.tetris.GetCell(x, y - 1) == CellType.EMPTY) {
+                            if (state.tetris.GetCell(x, y - 1) != CellType.EMPTY) {
+                                tHoles = 0;
                                 //tHoles += 1;
                             }
                             if (state.tetris.GetCell(x, y + 1) == CellType.EMPTY) {
@@ -234,13 +246,13 @@ namespace MinoBot
             accumulated += maxHeight * -1;
             accumulated += state.tetris.tspin switch {
                 TspinType.MINI => state.tetris.linesCleared switch {
-                    1 => 1000,
-                    2 => 2000,
+                    1 => 100,
+                    2 => 200,
                     _ => 0,
                 },
                 TspinType.FULL => state.tetris.linesCleared switch {
-                    1 => 2000,
-                    2 => 3000,
+                    1 => 250,
+                    2 => 2500,
                     3 => 5000,
                     _ => 0
                 },
@@ -252,11 +264,17 @@ namespace MinoBot
                     _ => 0
                 }
             };
+            if ((state.tetris.tspin == TspinType.NONE || state.tetris.linesCleared == 0) && state.tetrimino == Tetrimino.T) {
+                if (logging) {
+                    Console.WriteLine("punished for wasting T");
+                }
+                accumulated += -100;
+            }
             accumulated += wells > 1 ? (wells * wells * -1) : 0;
             accumulated += spikes * spikes * -1;
             float pieceFit = totalFilledEdgeTiles / (float) totalEdgeTiles;
             accumulated += pieceFit * pieceFit * 100;
-            //transient += tslots * 100;
+            accumulated += Math.Abs(tslots - Math.Max(1, availibleTs)) * -25;
             return (accumulated, transient);
         }
 
@@ -293,10 +311,12 @@ namespace MinoBot
         public Tetris tetris;
         public CustomTetrisRNG tetRng;
         public bool usesHeld;
+        public Tetrimino tetrimino;
         private bool setFinished;
         public TetrisState(Tetris tetris, CustomTetrisRNG tetRng) {
             this.tetris = tetris;
             this.tetRng = tetRng;
+            tetrimino = tetris.current;
         }
         public bool Finished() {
             return setFinished || tetris.blockOut || tetRng.index + 1 >= tetRng.bot.queue.Length;
@@ -310,13 +330,15 @@ namespace MinoBot
             if (hold) {
                 child.Hold();
             }
+            Tetrimino tetrimino = child.current;
             child.pieceX = move.x;
             child.pieceY = move.y;
             child.pieceRotation = move.rot;
             child.HardDrop();
             child.tspin = moveNode.tspin;
             return new TetrisState(child, childRng) {
-                usesHeld = hold
+                usesHeld = hold,
+                tetrimino = tetrimino
             };
         }
     }
@@ -339,7 +361,7 @@ namespace MinoBot
             throw new NotImplementedException();
         }
         public Tetrimino GetPiece(int index) {
-            throw new NotImplementedException();
+            return index < bot.queue.Length ? bot.queue[index] : null;
         }
     }
 }
