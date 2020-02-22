@@ -1,4 +1,5 @@
 ﻿//#define POOLING
+using MinoBot.Evaluators;
 using System;
 
 namespace MinoBot.MonteCarlo
@@ -88,9 +89,9 @@ namespace MinoBot.MonteCarlo
             root = maxNode;
             if (root != null) {
                 Console.Clear();
-                MinoBotEvaluator.standard.logging = true;
-                MinoBotEvaluator.standard.Evaluate(root);
-                MinoBotEvaluator.standard.logging = false;
+                StandardEvaluator.standard.logging = true;
+                StandardEvaluator.standard.Evaluate(root);
+                StandardEvaluator.standard.logging = false;
                 root.parent = null;
             }
             return root;

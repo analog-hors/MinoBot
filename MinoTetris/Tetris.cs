@@ -14,7 +14,6 @@ namespace MinoTetris
         public byte pieceRotation;// { get; private set; }
         public bool blockOut { get; private set; }
         public int linesCleared { get; private set; }
-        public int linesSent { get; private set; }
         public bool held;// { get; private set; }
         public TspinType tspin;
         public TspinType elibigleForTspin;
@@ -32,7 +31,6 @@ namespace MinoTetris
             pieceY = from.pieceY;
             pieceRotation = from.pieceRotation;
             blockOut = from.blockOut;
-            linesSent = from.linesSent;
             held = from.held;
         }
         public bool MoveLeft() {
