@@ -31,8 +31,6 @@ namespace MinoBotGUI
             tetris = new Tetris(tetRNG);
             TetrisDrawer.SetScale(new Vector2f(window.Size.X / 20, window.Size.Y / 20));
             pathfinder = new Pathfinder();
-            TetrisBot bot = new TetrisBot(tetris, new Random(0));
-            bot.holdAllowed = false;
             TetrisBot bot = new TetrisBot(tetris);
             moves = pathfinder.FindAllMoves(tetris, 1, 1, 1);
             long totalThinkMS = 0;
