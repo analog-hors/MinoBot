@@ -1,6 +1,7 @@
 ﻿using MinoBot.MonteCarlo;
 using MinoTetris;
 using System;
+using System.Collections.Generic;
 
 namespace MinoBot.Evaluators
 {
@@ -96,17 +97,10 @@ namespace MinoBot.Evaluators
                 Console.WriteLine($"{availibleTs} availible Ts.");
             }
 
-            int totalEdgeTiles = 0;
             int totalFilledEdgeTiles = 0;
+            HashSet<(int, int)> checkedCells = new HashSet<(int, int)>();
             void TestEdge(int x, int y) {
-                for (int i = 0; i < 4; i++) {
-                    Pair<sbyte> block = state.tetrimino.states[move.rot, i];
-                    if (x == block.x + move.x && y == block.y + move.y) {
-                        return;
-                    }
-                }
-                totalEdgeTiles += 1;
-                if (parentState.tetris.GetCell(x, y) != CellType.EMPTY) {
+                if (checkedCells.Add((x, y)) && parentState.tetris.GetCell(x, y) != CellType.EMPTY) {
                     totalFilledEdgeTiles += 1;
                 }
             }
@@ -119,7 +113,7 @@ namespace MinoBot.Evaluators
                 TestEdge(x, y + 1);
                 TestEdge(x, y - 1);
             }
-
+            int totalEdgeTiles = checkedCells.Count - 4;
             int holes = 0;
             //int buriedHoles = 0;
             bool isPC = true;
@@ -242,7 +236,10 @@ namespace MinoBot.Evaluators
             accumulated += wells > 1 ? (wells * wells * weights.wellsSquared + (wells * weights.wells)) : 0;
             accumulated += spikes * weights.spikes;
             accumulated += spikes * spikes * weights.spikesSquared;
-            float pieceFit = totalFilledEdgeTiles / (float) totalEdgeTiles;
+            float pieceFit = totalFilledEdgeTiles / ((float) totalEdgeTiles);
+            if (logging) {
+                Console.WriteLine($"{pieceFit * 100}% fit.");
+            }
             accumulated += pieceFit * weights.pieceFit;
             accumulated += pieceFit * pieceFit * weights.pieceFitSquared;
             accumulated += Math.Abs(tslots - Math.Max(1, availibleTs)) * weights.tSlotTDiff;
