@@ -88,10 +88,12 @@ namespace MinoBot.MonteCarlo
             }
             root = maxNode;
             if (root != null) {
+                /*
                 Console.Clear();
                 StandardEvaluator.standard.logging = true;
                 StandardEvaluator.standard.Evaluate(root);
                 StandardEvaluator.standard.logging = false;
+                */
                 root.parent = null;
             }
             return root;

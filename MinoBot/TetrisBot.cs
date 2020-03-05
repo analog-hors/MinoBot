@@ -52,7 +52,7 @@ namespace MinoBot
             return new TetrisState(new Tetris(tetris, rng), rng);
         }
         private void UpdateQueue(Tetris tetris) {
-            queue = new Tetrimino[6];
+            queue = new Tetrimino[5];
             for (int i = 0; i < queue.Length; i++) {
                 queue[i] = tetris.rng.GetPiece(i);
             }

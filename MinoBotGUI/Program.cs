@@ -102,6 +102,7 @@ namespace MinoBotGUI
                         */
                         totalNodes += nodes;
                         movesMade += 1;
+                        /*
                         Console.Clear();
                         Console.WriteLine($"Move {movesMade}.");
                         Console.WriteLine($"Thought for {elapsed}ms (avg: {totalThinkMS / (double) movesMade})");
@@ -112,7 +113,7 @@ namespace MinoBotGUI
                         Console.WriteLine("Selected node has:");
                         Console.WriteLine($"  score: {node.score} (avg: {totalNodeScore / movesMade})");
                         Console.WriteLine($"  simulations: {node.simulations} (avg: {totalSimulations / (double) movesMade})");
-
+                        */
                         move = node.move;
                         if (node.state.usesHeld) {
                             tetris.Hold();
