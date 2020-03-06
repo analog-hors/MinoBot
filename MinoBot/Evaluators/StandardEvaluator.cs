@@ -8,6 +8,8 @@ namespace MinoBot.Evaluators
     public struct StandardEvaluatorWeights {
         public float holes;
         public float holesSquared;
+        public float holeDepths;
+        public float holeDepthsSquared;
         public float moveHeight;
         public float moveHeightSquared;
         public float maxHeight;
@@ -38,6 +40,8 @@ namespace MinoBot.Evaluators
         public StandardEvaluatorWeights weights = new StandardEvaluatorWeights {
             holes = 0,
             holesSquared = -1,
+            holeDepths = 0,
+            holeDepthsSquared = -0.5f,
             moveHeight = 0,
             moveHeightSquared = -1,
             maxHeight = -1,
@@ -54,7 +58,7 @@ namespace MinoBot.Evaluators
             clear1 = 1,
             clear2 = 4,
             clear3 = 9,
-            clear4 = 16,
+            clear4 = 2500,
             tspin1 = 250,
             tspin2 = 2500,
             tspin3 = 5000,
@@ -115,6 +119,8 @@ namespace MinoBot.Evaluators
             }
             int totalEdgeTiles = checkedCells.Count - 4;
             int holes = 0;
+            int holeDepths = 0;
+            int holeDepthsSquared = 0;
             //int buriedHoles = 0;
             bool isPC = true;
             int wells = 0;
@@ -125,6 +131,9 @@ namespace MinoBot.Evaluators
                 for (int y = 20; y < 40; y++) {
                     if (state.tetris.GetCell(x, y) == CellType.EMPTY) {
                         if (39 - y < heights[x]) {
+                            int depth = heights[x] - 39 + y;
+                            holeDepths += depth;
+                            holeDepthsSquared += depth * depth;
                             holes += 1;//Math.Max(1, heights[x] - 39 + y / 2);
                         }
                     } else {
@@ -200,6 +209,8 @@ namespace MinoBot.Evaluators
 
             accumulated += holes * weights.holes;
             accumulated += holes * holes * weights.holesSquared;
+            accumulated += holeDepths * weights.holeDepths;
+            accumulated += holeDepthsSquared * weights.holeDepthsSquared;
             if (move.y <= 35) {
                 int moveHeight = 39 - move.y;
                 accumulated += moveHeight * weights.moveHeight;
